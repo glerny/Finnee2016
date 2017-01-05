@@ -14,8 +14,16 @@ classdef Finnee
     methods
         function obj = Finnee(varargin)
             
-            % Check the options and create the Finnee object
-            obj.Options = Options4Finnee(varargin);
+            if nargin == 1
+                if isa(varargin{1}, 'Options4Finnee')
+                    obj.Options = varargin{1};
+                else
+                    % Check the options and create the Finnee object
+                    obj.Options = Options4Finnee(varargin);
+                end
+            else
+                obj.Options = Options4Finnee(varargin);
+            end
             
             switch obj.Options.FileFormat
                 case 'mzML'
@@ -58,4 +66,3 @@ classdef Finnee
     end
     
 end
-

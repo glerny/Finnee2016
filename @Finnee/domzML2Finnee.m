@@ -316,6 +316,3 @@ structInfo.Log       	= 'BIS DTS=1';
 structInfo.traceType   	= 'MS profile';
 obj.Datasets{1}.BIS  	= Trace(structInfo, [axeMZ(:,1), axeMZ(:,4)]);
 end
-
-
-
