@@ -58,17 +58,21 @@ classdef Trace
         end
         
         function data = get.Data(obj)
-            fidReadDat = fopen(obj.Path2Dat, 'rb');
-            fseek(fidReadDat,  obj.Index(1), 'bof');
-            switch obj.Precision
-                case 'single'
-                    data = fread(fidReadDat, [( obj.Index(2)- obj.Index(1))/...
-                        (4* obj.Index(3)) obj.Index(3)], 'single');
-                case 'double'
-                    data = fread(fidReadDat, [( obj.Index(2)- obj.Index(1))/...
-                        (8* obj.Index(3))  obj.Index(3)], 'double');
+            if obj.Index(1) == obj.Index(2)
+                data = {};
+            else
+                fidReadDat = fopen(obj.Path2Dat, 'rb');
+                fseek(fidReadDat,  obj.Index(1), 'bof');
+                switch obj.Precision
+                    case 'single'
+                        data = fread(fidReadDat, [( obj.Index(2)- obj.Index(1))/...
+                            (4* obj.Index(3)) obj.Index(3)], 'single');
+                    case 'double'
+                        data = fread(fidReadDat, [( obj.Index(2)- obj.Index(1))/...
+                            (8* obj.Index(3))  obj.Index(3)], 'double');
+                end
+                fclose(fidReadDat);
             end
-            fclose(fidReadDat);
         end
         
         function plot(obj)

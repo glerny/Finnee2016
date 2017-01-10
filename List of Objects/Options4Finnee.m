@@ -62,11 +62,6 @@ classdef Options4Finnee
             if ~isempty(tgtIx);
                 obj.Overwrite = true;
             end
-            tgtIx               = input('rounding');
-            if ~isempty(tgtIx);
-                obj.Rounding = VAR{tgtIx +1};
-            end
-            
             
             % fileIn
             if isempty(obj.FileIn)

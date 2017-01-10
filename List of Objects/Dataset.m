@@ -80,7 +80,7 @@ classdef Dataset
                         num2str(axeX(indMZStt), obj.PrecInY),...
                         ' to ', num2str(axeX(indMZEnd), obj.PrecInY), ...
                         ' ', obj.YUnit];
-            
+                    
                 case 'MS centroid'
                     prof(:,1) = obj.TimeAxe.Data;
                     prof(:,2) = 0;
@@ -199,23 +199,30 @@ classdef Dataset
             end
             
             XMS(:,1) = obj.MzAxe.Data;
-            cst = MS.Variables;
-            rdg = obj.RndFactor;
-            axe = MS.Data(:,1)/(1-cst);
-            [tf, loc] = ismember(round(axe*10^rdg)/10^rdg, ...
-                round(XMS(:,1)*10^rdg)/10^rdg);
-            
-            indZeros = find(tf == 0);
-            if ~isempty(indZeros)
-                [~, locc] = ismember(ceil(axe*10^rdg)/10^rdg, ...
-                    ceil(XMS(:,1)*10^rdg)/10^rdg);
-                loc(indZeros) = locc(indZeros);
+            if isempty(MS.Data)
+                XMS(:,2) = 0;
+            else
+                cst = MS.Variables;
+                rdg = obj.RndFactor;
+                axe = MS.Data(:,1)/(1-cst);
+                [tf, loc] = ismember(round(axe*10^rdg)/10^rdg, ...
+                    round(XMS(:,1)*10^rdg)/10^rdg);
+                
+                indZeros = find(tf == 0);
+                if ~isempty(indZeros)
+                    [~, locc] = ismember(ceil(axe*10^rdg)/10^rdg, ...
+                        ceil(XMS(:,1)*10^rdg)/10^rdg);
+                    loc(indZeros) = locc(indZeros);
+                end
+                
+                indNotNull = loc ~= 0;
+                XMS(loc(indNotNull), 2) = MS.Data(indNotNull,2);
             end
             
-            XMS(loc, 2) = MS.Data(:,2);
             if ~AxeOr
                 XMS(:,1) = XMS(:,1)*(1-cst);
             end
+            
         end
         
         function plot(obj, what)

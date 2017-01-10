@@ -256,12 +256,13 @@ classdef Options4bslCor
                 bsl = zeros(length(yy(:,2)), 1);
                 bsl(notZeros) = round(baseline);
                 filteredyy = yy(:,2) - bsl;
+                assignin('base', 'ftyy', filteredyy)
                 noise = str2double(edNoise.String);
                 wdz = str2double(edWdz.String);
                 mat4noise = zeros(length(filteredyy), 2*wdz+1);
                 for ii = 1:2*wdz+1
-                    id1 = max(1, ii-wdz);
-                    id2 = max(2*wdz-ii, 1);
+                    id1 = max(wdz+2-ii, 1);
+                    id2 = max(ii-wdz, 1);
                     mat4noise(id1:end-id2+1, ii) = filteredyy(id2:end-id1+1);
                 end
                 w = max(mat4noise, [], 2) < 3*noise;

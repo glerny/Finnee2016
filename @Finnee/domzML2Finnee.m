@@ -218,6 +218,25 @@ while count <= scanCount
                     end
                 end
                 
+                %3 Filter spikes if needed
+                if obj.Options.RemSpks
+                    if ~(obj.Options.SpksSz == 1 || obj.Options.SpksSz == 2)
+                        error('The only allowed value are 1 or 2')
+                    end
+                    
+                    if obj.Options.SpksSz == 2
+                        findZeros = find(MS(:,2) == 0);
+                        ind2null = findZeros(diff(findZeros) > 2 ...
+                            & diff(findZeros) <=3);
+                        MS(ind2null+1, 2) = 0;
+                    end
+                    
+                    findZeros = find(MS(:,2) == 0);
+                    ind2null = findZeros(diff(findZeros) > 1 ...
+                        & diff(findZeros) <=2);
+                    MS(ind2null+1, 2) = 0;
+                    
+                end
                 %2. reduced MS data by keeping only one trailing
                 %zero
                 provMat = [MS(2:end, 2); 0];
@@ -237,21 +256,19 @@ while count <= scanCount
                 
             elseif strcmp(obj.Datasets{1}.Format, 'MS centroid')
                 % DATA 4 each scan
-                obj.Datasets{1}.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr) ;
-                
                 structInfo.title        = ['Centroid scan #', num2str(count)];
                 structInfo.traceType    = obj.Datasets{1}.Format;
                 structInfo.XLabel       = obj.Datasets{1}.YLabel;
                 structInfo.XUnit        = obj.Datasets{1}.YUnit;
                 structInfo.YLabel       = obj.Datasets{1}.ZLabel;
                 structInfo.YUnit        = obj.Datasets{1}.ZUnit;
-                structInfo.Path2Dat     = obj.Datasets{1}.Path2Dat{fln} ;
+                structInfo.link2file    = path2dat;
                 structInfo.Variables    = 0;
                 structInfo.Precision    = 'single';
-                structInfo.Path2Fin     = obj.Path2Fin;
+                structInfo.Path2Finnee  = obj.Path;
                 structInfo.Log          = 'CTRMSSCN DTS=1';
                 obj.Datasets{1}.ListOfScans{count} = Trace(structInfo, MS);
-                axeMZ = [0 0 0 0];
+                axeMZ = [0 0 0 ];
             end
             
             allProfiles(count, 2) = sum(MS(:,2));
