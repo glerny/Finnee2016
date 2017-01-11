@@ -1,11 +1,8 @@
 classdef Finnee
-    
-    properties (Hidden = true)
-        MZMLDump
-        Path2Fin     
-    end
-    
+
     properties
+        MZMLDump
+        Path2Fin  
         Options
         FileID
         Datasets

@@ -98,7 +98,7 @@ for ii = [1: wdz, (length(axeX) - wdz):length(axeX)]
     dataMZ(iNZ, 3) = dataMZ(iNZ, 3) + 1;
     dataMZ(:,4)    = max([dataMZ(:,4), XMS(:,2)], [], 2);
     dataPrf(ii,2)  = sum(XMS(:,2));
-    dataPrf(ii,3)  =  max(XMS(:,2));
+    dataPrf(ii,3)  = max(XMS(:,2));
     
     provMat                 = [XMS(2:end, 2); 0];
     provMat(:,2)            = XMS(:, 2);
@@ -123,16 +123,18 @@ h = waitbar(0,'Correcting spectra');
 for ii = 2*wdz+2:length(axeX)
     waitbar(ii/length(axeX))
     
-    
     dtsOut.Path2Dat{fln} = fullfile(path2Dir, rndStr);
     structInfo.Path2Dat  = dtsOut.Path2Dat{fln};
     
     MSCur = M4C(:, wdz+1);
-    D = zeros(length(MSCur) + 2*wdz, (2*wdz+1)*2*wdz);
+    
+    D = zeros(length(MSCur), (2*wdz+1)^2);
     for jj =1: 2*wdz+1
-        D(jj:length(MSCur)+jj-1, (jj-1)*(2*wdz+1)+1:jj*(2*wdz+1)) = M4C;
+        id1 = max(wdz+2-jj, 1);
+        id2 = max(jj-wdz, 1);
+        D(id1:end-id2+1,(2*wdz+1)*(jj-1)+1:(2*wdz+1)*jj) = M4C(id2:end-id1+1, :);
     end
-    ind2cut = max(D(wdz+1: end - wdz, :), [], 2) < 3*noise;
+    ind2cut = max(D, [], 2) < 3*noise;
     
     MSCur(ind2cut) = 0;
     XMS = axeY;

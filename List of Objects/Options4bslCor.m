@@ -256,7 +256,6 @@ classdef Options4bslCor
                 bsl = zeros(length(yy(:,2)), 1);
                 bsl(notZeros) = round(baseline);
                 filteredyy = yy(:,2) - bsl;
-                assignin('base', 'ftyy', filteredyy)
                 noise = str2double(edNoise.String);
                 wdz = str2double(edWdz.String);
                 mat4noise = zeros(length(filteredyy), 2*wdz+1);
