@@ -1,23 +1,20 @@
 classdef Trace 
     
-    properties (Hidden = true)
+    properties
+        Title     = ''
         TraceType   = 'continuous'
         XLabel      = 'Time'
         XUnit       = ''
+        PrecInX     = '%.2f'
         YLabel      = 'Intensity'
         YUnit       = ''
+        PrecInY     = '%.4f'
         Path2Dat    = ''
         Index       = [0 0 0]
         Precision   = 'single'
         Variables   = []
         Path2Fin    = ''
         Log         = ''
-        PrecInX     = '%.2f'
-        PrecInY     = '%.4f'
-    end
-    
-    properties
-        Title     = ''
     end
     
     properties (Dependent)

@@ -1,6 +1,6 @@
 classdef Axe 
     
-    properties (Hidden = true)
+    properties 
         XLabel   	= 'Time'
         XUnit       = ''
         Path2Dat    = ''

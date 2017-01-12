@@ -1,34 +1,30 @@
 classdef Dataset
     
-    properties (Hidden = true)
+    properties
+        Title           = ''
+        Format          = 'MS profile'
         CreatedFrom     = ''
         XLabel          = 'Time'
         XUnit           = ''
         PrecInX         = '%.2f'
+        TimeAxe
         YLabel          = 'Mass'
         YUnit           = ''
         PrecInY         = '%.4f'
+        MzAxe
         ZLabel          = 'Intensity'
         ZUnit           = ''
         RndFactor       = 3
         Path2Dat        = {}
         Path2Fin        = ''
         Log             = ''
-        TimeAxe
-        MzAxe
-        LAST
-        
-    end
-    
-    properties
-        ListOfScans
-        Title           = ''
-        Format          = 'MS profile'
         BPP
         TIP
         TIS
         FIS
         BIS
+        LAST
+        ListOfScans
     end
     
     methods
