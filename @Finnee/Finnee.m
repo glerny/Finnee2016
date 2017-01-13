@@ -28,6 +28,8 @@ classdef Finnee
         end
         
         function save(obj)
+            myFinnee = obj;
+            save(fullfile(obj.Path2Fin, 'myFinnee.mat'), 'myFinnee')
         end
         
         function toMZML(obj, dts)
@@ -98,7 +100,7 @@ classdef Finnee
             end
             
             obj.Datasets{end+1} = newDts;
-            
+                        
             myFinnee = obj;
             save(fullfile(obj.Path2Fin, 'myFinnee.mat'), 'myFinnee')
         end
