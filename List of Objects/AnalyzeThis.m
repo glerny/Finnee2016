@@ -8,7 +8,7 @@ classdef AnalyzeThis
         BaselineMethod  	= 'ArPLS:10E6:0.001'
         % Possible methods:
         %   'None'      	No additional parameter
-        % 	'Polyn:p1'      Polynomial fitting, p1 is the degree of the
+        % 	'PF:p1'         Polynomial fitting, p1 is the degree of the
         %                   polynomial (p1=0: constant; p1=1: linear...) 
         %   'ArPLS:p1:p2'   Baseline correction using asymmetrically 
         %                   reweighted penalized least squares smoothing, 
@@ -99,11 +99,18 @@ classdef AnalyzeThis
         
         function baseline = get.Baseline(obj)
             
-            baseline.definition = obj.BaselineMethod;
-            baseline.noise(1) = NaN;
+            basDef =  regexp(obj.BaselineMethod, ':', 'split');
             
-            switch obj.BaselineMethod.name
+            switch basDef{1}
+                case 'None'
+                    [~, n] = size(obj.DataIn);
+                    XY = obj.DataIn(:,1);
+                    baseline.bckgPts =  false(n,1);
+                    baseline.noise = 4*std(XY(:,1));
+                    
+                case 'PF'
                 case 'ArPLS'
+                case 'ArPLS2'
                     [~, n] = size(obj.DataIn);
                     results(:,1) = obj.DataIn(:,1);
                     lambda = obj.BaselineMethod.param1;
@@ -116,17 +123,9 @@ classdef AnalyzeThis
                         baseline.noise(ii) = 4*std(z(bslPts));
                     end
                     
-                case 'None'
-                    [~, n] = size(obj.DataIn);
-                    results = zeros(size(obj.DataIn));
-                    results(:,1) = obj.DataIn(:,1);
-                    
-                    for ii = 2:n
-                        yori = obj.DataIn(:,ii);
-                        baseline.noise(ii) = 4*std(yori);
-                    end
+                
             end
-            baseline.values = results;
+            baseline.XY = results;
         end
         
         function peakList = get.PeakList(obj)
