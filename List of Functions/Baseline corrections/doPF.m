@@ -1,5 +1,8 @@
 function [z, bslPts] = doPF(XY, n)
-% Copyrignt 
+% BSD 3-Clause License
+% Copyright(c) 2017, Guillaume Erny All rights reserved.
+%
+% Unpublished results
 
 N = length(XY(:,1));
 w = ones(N, 1);
