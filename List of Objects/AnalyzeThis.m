@@ -3,30 +3,35 @@ classdef AnalyzeThis
     properties
         %% Options for fileInfo
         DataIn              = []
-        % First colum: axe; following traces (cn be more than 1 nut should
+        % First colum: axe; following traces (can be more than 1 but should
         % be related
         
-        BaselineMethod  	= struct('name', 'ArPLS', 'param1', 10E6)
+        BaselineMethod  	= 'ArPLS:10E6:0.001'
         % Possible methods:
-        %   'None'      No additional parameter
-        % 	'Constant'  No additional parameter
-        % 	'Linear'    No additional parameter
-        %   'ArPLS'     One additional paremater recommanded value 10E2-10E9
-        %               Detault method with 10E6 as paramters
+        %   'None'      	No additional parameter
+        % 	'Polyn:p1'      Polynomial fitting, p1 is the degree of the
+        %                   polynomial (p1=0: constant; p1=1: linear...) 
+        %   'ArPLS:p1:p2'   Baseline correction using asymmetrically 
+        %                   reweighted penalized least squares smoothing, 
+        %                   (doi: 10.1039/c4an01061b), 
+        %                   p1: lambda(10E2-10E9); p2: alpha
         
-        SmoothingMethod     = struct('name', 'None')
+        SmoothingMethod     = 'None'
         % Possible methods:
-        %   'None'      No additional parameter
+        %   'None'          No additional parameter
         
-        PeakPickingMethod 	= struct('name', 'LmMm', 'param1', 2)
+        PeakPickingMethod 	= 'LmMm:2:10'
         % Possible methods:
-        %   'LmMm'      One additional parameter, integer from 0-9
+        %   'LmMm:p1'       Peak detected as a local Maxime between 2
+        %                   local minimaux, p1 is the number of neighbourgh 
+        %                   used to detect local maximum or minimum (1:10),
+        %                   p2 is a intensity threshold below witch peaks
+        %                   will not be calculated
         
         DeconvolutionMethod = struct('name', 'None')
         % Possible methods:
-        %   'None'      No additional parameter
+        %   'None'          No additional parameter
         
-        Threshold = [];
         
     end
     
