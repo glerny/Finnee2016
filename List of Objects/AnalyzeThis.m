@@ -3,7 +3,7 @@ classdef AnalyzeThis
     properties
         %% Options for fileInfo
         DataIn              = []
-        % First colum: axe; followiing traces (cn be more than 1 nut should
+        % First colum: axe; following traces (cn be more than 1 nut should
         % be related
         
         BaselineMethod  	= struct('name', 'ArPLS', 'param1', 10E6)
