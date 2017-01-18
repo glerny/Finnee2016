@@ -3,8 +3,7 @@ classdef AnalyzeThis
     properties
         %% Options for fileInfo
         DataIn              = []
-        % First colum: axe; following traces (can be more than 1 but should
-        % be related
+        % First column: axe, second column dependent values
         
         BaselineMethod  	= 'ArPLS:10E6:0.001'
         % Possible methods:
@@ -22,10 +21,10 @@ classdef AnalyzeThis
         
         PeakPickingMethod 	= 'LmMm:2:10'
         % Possible methods:
-        %   'LmMm:p1'       Peak detected as a local Maxime between 2
-        %                   local minimaux, p1 is the number of neighbourgh 
+        %   'LmMm:p1'       Peak detected as a local Maximum between 2
+        %                   local minima, p1 is the number of neighbourgh 
         %                   used to detect local maximum or minimum (1:10),
-        %                   p2 is a intensity threshold below witch peaks
+        %                   p2 is an intensity threshold below witch peaks
         %                   will not be calculated
         
         DeconvolutionMethod = struct('name', 'None')
