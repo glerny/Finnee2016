@@ -21,7 +21,7 @@ classdef AnalyzeThis
         
         PeakPickingMethod 	= 'LmMm:2:10'
         % Possible methods:
-        %   'LmMm:p1'       Peak detected as a local Maximum between 2
+        %   'LmMm:p1:p2'    Peak detected as a local Maximum between 2
         %                   local minima, p1 is the number of neighbourgh 
         %                   used to detect local maximum or minimum (1:10),
         %                   p2 is an intensity threshold below witch peaks
@@ -42,6 +42,9 @@ classdef AnalyzeThis
     
     methods
         function obj = AnalyzeThis(dataIn, varargin)
+             if nargin  <1
+                error('error')
+            end
             obj.DataIn = dataIn;
             
             if nargin  < 2
@@ -52,144 +55,123 @@ classdef AnalyzeThis
             
             tgtIx = input('baseline');
             if ~isempty(tgtIx)
-                str2dec = varargin{tgtIx +1};
-                C =  regexp(str2dec, ':', 'split');
-                switch lower(C{1})
-                    case 'none'
-                        obj.BaselineMethod = struct('name', 'None');
-                        
-                    case 'constant'
-                        obj.BaselineMethod = struct('name', 'Constant');
-                        
-                    case 'linear'
-                        obj.BaselineMethod = struct('name', 'Linear');
-                        
-                    case 'arpls'
-                        if length(C) < 2
-                            C(2) = '10E6';
-                        end
-                        
-                        obj.BaselineMethod = struct(...
-                            'name', 'ArPLS',...
-                            'param1', str2double(C(2)) );
-                end
+                obj.BaselineMethod = varargin{tgtIx +1};
             end
             
             tgtIx = input('peakpicking');
             if ~isempty(tgtIx)
-                str2dec = varargin{tgtIx +1};
-                C =  regexp(str2dec, ':', 'split');
-                switch lower(C{1})
-                    case 'lmmm'
-                        if length(C) < 2
-                            C(2) = '2';
-                        end
-                        
-                        obj.PeakPickingMethod = struct(...
-                            'name', 'LmMm',...
-                            'param1', str2double(C(2)) );
-                end
-            end
-            
-            tgtIx = input('threshold');
-            if ~isempty(tgtIx)
-                obj.Threshold = varargin{tgtIx +1};
+                obj.PeakPickingMethod = varargin{tgtIx +1};
             end
         end
         
         function baseline = get.Baseline(obj)
-            
             basDef =  regexp(obj.BaselineMethod, ':', 'split');
             
             switch basDef{1}
                 case 'None'
-                    [~, n] = size(obj.DataIn);
-                    XY = obj.DataIn(:,1);
-                    baseline.bckgPts =  false(n,1);
-                    baseline.noise = 4*std(XY(:,1));
+                    [m, ~] = size(obj.DataIn);
+                    XY = obj.DataIn;
+                    baseline.bckgPts = false(m,1);
+                    baseline.noise = 4*std(XY(:,2));
+                    baseline.vals = zeros(m, 1);
                     
                 case 'PF'
+                    XY = obj.DataIn;
+                    [z, bslPts] = doPF(XY, str2double(basDef{2}));
+                    baseline.bckgPts = bslPts;
+                    baseline.noise = 4*std(XY(bslPts,2) - z(bslPts));
+                    baseline.vals = z;
+                    
                 case 'ArPLS'
+                    XY = obj.DataIn;
+                    lambda = str2double(basDef{2});
+                    ratio = str2double(basDef{3});
+                    [m, ~] = size(obj.DataIn);
+                    
+                    iNZ = XY(:,2) ~= 0;
+                    [z, bslPts] = doArPLS(XY(iNZ, 2), lambda, ratio);
+                    baseline.bckgPts = false(m,1);
+                    baseline.bckgPts(iNZ) = bslPts;
+                    baseline.noise = 4*std(XY(iNZ(bslPts),2) - z(bslPts));
+                    baseline.vals = zeros(m, 1);
+                    baseline.vals(iNZ) = z;
+                    
                 case 'ArPLS2'
-                    [~, n] = size(obj.DataIn);
-                    results(:,1) = obj.DataIn(:,1);
-                    lambda = obj.BaselineMethod.param1;
+                    XY = obj.DataIn;
+                    lambda = str2double(basDef{2});
+                    [m, ~] = size(obj.DataIn);
                     
-                    for ii = 2:n
-                        yori = obj.DataIn(:,ii);
-                        indNotZeros = yori ~= 0;
-                        [z, bslPts, ~] = doArPLS(yori(indNotZeros), lambda);
-                        results(indNotZeros, ii) = z;
-                        baseline.noise(ii) = 4*std(z(bslPts));
-                    end
-                    
-                
+                    iNZ = XY(:,2) ~= 0;
+                    [z, bslPts] = doArPLS2(XY(iNZ, 2), lambda);
+                    baseline.bckgPts = false(m,1);
+                    baseline.bckgPts(iNZ) = bslPts;
+                    baseline.vals = zeros(m, 1);
+                    baseline.vals(iNZ) = z;
+                    baseline.noise = 4*std(nonzeros(XY(baseline.bckgPts,2) ...
+                        - baseline.vals(baseline.bckgPts)));
+
             end
-            baseline.XY = results;
         end
         
         function peakList = get.PeakList(obj)
-            [~, n] = size(obj.DataIn);
-            peakList(n - 1) = struct();
-            for ii = 2:n;
-                if isempty(obj.Threshold)
-                    thrs = 3* obj.Baseline.noise(ii);
-                else
-                    thrs = obj.Threshold;
-                end
-                
-                yOri = obj.DataIn(:,ii) - obj.Baseline.values(:,ii);
-                
-                switch obj.PeakPickingMethod.name
-                    case 'LmMm'
-                        X = spread(yOri, obj.PeakPickingMethod.param1);
+            basDef =  regexp(obj.PeakPickingMethod, ':', 'split');
+            
+            switch basDef{1}
+                case 'LmMm'
+                    
+                    if str2double(basDef{3}) == Inf
+                        thrs = 3*obj.Baseline.noise;
+                    else
+                        thrs = str2double(basDef{3});
+                    end
+             
+                    yOri = obj.DataIn(:,2) - obj.Baseline.vals;
+                    X = spread(yOri, str2double(basDef{2}));
+                    
+                    locMax = find(X(:,((1+end)/2)) == max(X, [], 2) & ...
+                        max(X, [], 2) >= thrs);
+                    locMin =  find(X(:,((1+end)/2)) == min(X, [], 2));
+                    IdPair = zeros(length(locMax), 2);
+                    for jj = 1:length(locMax)
+                        IX = find(locMin < locMax(jj), 1, 'last');
+                        if isempty(IX), IX = 1; end
+                        IdPair(jj, 1) = locMin(IX);
                         
-                        locMax = find(X(:,((1+end)/2)) == max(X, [], 2) & max(X, [], 2) >= thrs);
-                        locMin =  find(X(:,((1+end)/2)) == min(X, [], 2));
-                        IdPair = zeros(length(locMax), 2);
-                        for jj = 1:length(locMax)
-                            IX = find(locMin < locMax(jj), 1, 'last');
-                            if isempty(IX), IX = 1; end
-                            IdPair(jj, 1) = locMin(IX);
-                            
-                            IX = find(locMin > locMax(jj), 1, 'first');
-                            if isempty(IX), IX = length(locMin); end
-                            IdPair(jj, 2) = locMin(IX);
-                            
-                        end
+                        IX = find(locMin > locMax(jj), 1, 'first');
+                        if isempty(IX), IX = length(locMin); end
+                        IdPair(jj, 2) = locMin(IX);
                         
-                        [~, m, ~] = unique(IdPair(:,1));
-                        IdPair = IdPair(m, :);
-                        I2R = IdPair(:,2) - IdPair(:,1) < 2;
-                        IdPair(I2R, :) = [];
-                        
-                        FOM = zeros(length(IdPair(:,2)), 8);
-                        
-                        peakList.headings = {'1:PeakStart', '2:PeakEnd', ...
-                            '3:M0', '4:M1', '5:M2', '6:M3', ...
-                            '7:Imax', '8:@Imax'};
-                        for jj = 1:length(IdPair(:,2))
-                            xc = obj.DataIn(IdPair(jj,1): IdPair(jj,2), 1);
-                            yc = yOri(IdPair(jj,1): IdPair(jj,2));
-                            FOM(jj,1) = xc(1);
-                            FOM(jj,2) = xc(end);
-                            FOM(jj,3) = trapz(xc, yc);
-                            FOM(jj,4) = trapz(xc, xc.*yc)/FOM(jj,3);
-                            FOM(jj,5) = trapz(xc, (xc-FOM(jj,4)).^2.*yc)/FOM(jj,3);
-                            FOM(jj,6) = trapz(xc, (xc-FOM(jj,4)).^3.*yc)/FOM(jj,3);
-                            [FOM(jj,7), indAtMax] = max(yc);
-                            FOM(jj,8) = xc(indAtMax);
-                        end
-                        
-                       
-                end
+                    end
+                    
+                    [~, m, ~] = unique(IdPair(:,1));
+                    IdPair = IdPair(m, :);
+                    I2R = IdPair(:,2) - IdPair(:,1) < 2;
+                    IdPair(I2R, :) = [];
+                    
+                    FOM = zeros(length(IdPair(:,2)), 8);
+                    
+                    peakList.headings = {'1:PeakStart', '2:PeakEnd', ...
+                        '3:M0', '4:M1', '5:M2', '6:M3', ...
+                        '7:Imax', '8:@Imax'};
+                    for jj = 1:length(IdPair(:,2))
+                        xc = obj.DataIn(IdPair(jj,1): IdPair(jj,2), 1);
+                        yc = yOri(IdPair(jj,1): IdPair(jj,2));
+                        FOM(jj,1) = xc(1);
+                        FOM(jj,2) = xc(end);
+                        FOM(jj,3) = trapz(xc, yc);
+                        FOM(jj,4) = trapz(xc, xc.*yc)/FOM(jj,3);
+                        FOM(jj,5) = trapz(xc, (xc-FOM(jj,4)).^2.*yc)/FOM(jj,3);
+                        FOM(jj,6) = trapz(xc, (xc-FOM(jj,4)).^3.*yc)/FOM(jj,3);
+                        [FOM(jj,7), indAtMax] = max(yc);
+                        FOM(jj,8) = xc(indAtMax);
+                    end
+                    
             end
-            peakList.data = FOM;      
+            peakList.data = FOM;
         end
         
         function plotAnalysis(obj)
-            [~, n] = size(obj.DataIn);
-            for ii = 2:n
+            
                 figure('Name', 'Result AnalyzeThis');
                 hold on
                 lim2Plot(:,1) = ...
@@ -198,11 +180,11 @@ classdef AnalyzeThis
                     lim2Plot(jj,2) = ...
                         obj.DataIn(obj.DataIn(:,1) == lim2Plot(jj,1),2);
                     lim2Plot(jj,3) = ...
-                       obj.Baseline.values(obj.DataIn(:,1) == lim2Plot(jj,1),2);
+                       obj.Baseline.vals(obj.DataIn(:,1) == lim2Plot(jj,1));
                 end
                 
                 plot(obj.DataIn(:,1), obj.DataIn(:,2));
-                plot(obj.Baseline.values(:,1), obj.Baseline.values(:,2), 'r')
+                plot(obj.DataIn(:,1), obj.Baseline.vals(:), 'r')
                 stem(lim2Plot(:,1), lim2Plot(:,2), 'k', 'Marker', 'none')
                 stem(lim2Plot(:,1), lim2Plot(:,3), 'w', 'Marker', 'none')
                 
@@ -217,8 +199,7 @@ classdef AnalyzeThis
                 
                 
                 hold off
-                
-            end
+
         end
         
     end

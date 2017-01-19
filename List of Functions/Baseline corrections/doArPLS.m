@@ -1,4 +1,4 @@
-function z= doArPLS(y, lambda, ratio)
+function [z, bslPts] = doArPLS(y, lambda, ratio)
 % Estimate baseline with arPLS in MATLAB
 % Function published in :
 % Baek, S.-J., Park, A., Ahn, Y.-J., Choo, J. (2015) 
@@ -19,9 +19,11 @@ while true
     dn = d(d<0);
     m = mean(dn);
     s = std(dn);
-    w = 1./(1 + exp(2*(abs(d) - (2*s-m))/s));
+    wt = 1./(1 + exp(2*(abs(d) - (2*s-m))/s));
    
     if norm(w - wt)/norm(w) < ratio, break; end
     w = wt;
     
 end
+
+bslPts = w > 0.05;
