@@ -35,7 +35,7 @@ classdef Finnee
         function toMZML(obj, dts)
         end
         
-        function obj = doBaseline(obj, dts, par4bas)
+        function obj = doBaselinePrf(obj, dts, par4bas)
             m = length(obj.Datasets) + 1;
             newDts = doBslCor(obj.Datasets{dts}, par4bas, ...
                 obj.Path2Fin, obj.Options.MaxFileSize, m);
