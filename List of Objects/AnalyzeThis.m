@@ -90,11 +90,12 @@ classdef AnalyzeThis
                     
                     iNZ = XY(:,2) ~= 0;
                     [z, bslPts] = doArPLS(XY(iNZ, 2), lambda, ratio);
-                    baseline.bckgPts = false(m,1);
+                   baseline.bckgPts = false(m,1);
                     baseline.bckgPts(iNZ) = bslPts;
-                    baseline.noise = 4*std(XY(iNZ(bslPts),2) - z(bslPts));
                     baseline.vals = zeros(m, 1);
                     baseline.vals(iNZ) = z;
+                    baseline.noise = 4*std(nonzeros(XY(baseline.bckgPts,2) ...
+                        - baseline.vals(baseline.bckgPts)));
                     
                 case 'ArPLS2'
                     XY = obj.DataIn;

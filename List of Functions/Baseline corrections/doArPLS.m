@@ -9,8 +9,9 @@ N = length(y);
 D = diff(speye(N), 2);
 H = lambda*(D'*D);
 w = ones(N,1);
+iterMax = 20;
 
-while true
+for ii = 1:iterMax;
     W = spdiags(w, 0, N, N);
     % Cholesky decomposition
     C = chol(W + H);
