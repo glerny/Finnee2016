@@ -1,18 +1,12 @@
-%% DESCRIPTION
+%% Description
+% DOMZML2FINNEE takes as entry paramter a options4finnee object and will
+% create a Finnee object. DOMZML2FINNEE will load, read and convert an mzML
+% file to a Finnee object.
 %
-% 1. INTRODUCTION
-%
-% 2. INPUT PARAMETERS
-%
-% 3. OUTPUT PARAMETERS
-%
-% 4.  EXAMPLES
-%
-% 5. COPYRIGHT
-% Copyright 2015-2016 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%% Copyright 
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 function obj = domzML2Finnee(obj)
 
@@ -93,7 +87,6 @@ while ~strcmp(LDR.label, '/spectrum')
     [LDR, ~] = getMZMLCamp(curLine, fidRead);
 end
 
-% v. Do for all. Initialistaion
 fseek(fidRead, keptPl, 'bof'); % Go back at the start of the spectrumList
 curLine = fgetl(fidRead);
 [LDR, ~] = getMZMLCamp(curLine, fidRead);
@@ -108,8 +101,10 @@ axeMZ = [];
 count = 1;
 fln = 1;
 
+
 h = waitbar(0,'processing scans');
 while count <= scanCount
+% iii. Find each scan
     if strcmp(LDR.label, 'spectrum'), boolArray = 1; end
     
     if strcmp(LDR.label, 'cvParam') && ~isempty(LDR.attributes)
@@ -155,7 +150,7 @@ while count <= scanCount
             MS =  [mzValue intValue];
             
             if strcmp(obj.Datasets{1}.Format, 'MS profile')
-                % DATA 4 each scan
+                % 1. Do if a scan is profile mode
                 obj.Datasets{1}.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr) ;
 
                 structInfo.title        = ['Profile scan #', num2str(count)];
@@ -180,8 +175,8 @@ while count <= scanCount
                     axeMZ(indNotZeros,3) = 1;
                     axeMZ(:,4) = intValue;
                 else
-                    %1. Normalize axeMS with new axe and check for
-                    %missing values
+                    % Normalize axeMS with new axe and check for
+                    % missing values
                     [~,ia,ib] = intersect(round(axeMZ(:,1)*10^rdg)/10^rdg,...
                         round(mzValue*10^rdg)/10^rdg);
                     cst = mean((axeMZ(ia) - mzValue(ib))./axeMZ(ia));
@@ -218,27 +213,11 @@ while count <= scanCount
                     end
                 end
                 
-                %3 Filter spikes if needed
+                % Filter spikes if needed
                 if obj.Options.RemSpks
-                    if ~(obj.Options.SpksSz == 1 || obj.Options.SpksSz == 2)
-                        error('The only allowed value are 1 or 2')
-                    end
-                    
-                    if obj.Options.SpksSz == 2
-                        findZeros = find(MS(:,2) == 0);
-                        ind2null = findZeros(diff(findZeros) > 2 ...
-                            & diff(findZeros) <=3);
-                        MS(ind2null+1, 2) = 0;
-                    end
-                    
-                    findZeros = find(MS(:,2) == 0);
-                    ind2null = findZeros(diff(findZeros) > 1 ...
-                        & diff(findZeros) <=2);
-                    MS(ind2null+1, 2) = 0;
-                    
                 end
-                %2. reduced MS data by keeping only one trailing
-                %zero
+                
+                % reduced MS data by keeping only one trailing zero
                 provMat = [MS(2:end, 2); 0];
                 provMat(:,2) = MS(:, 2);
                 provMat(:,3) = [0; MS(1:end-1, 2)];
@@ -255,7 +234,8 @@ while count <= scanCount
                     
                 
             elseif strcmp(obj.Datasets{1}.Format, 'MS centroid')
-                % DATA 4 each scan
+                % 2. Do if a scan is centroid mode
+                
                 structInfo.title        = ['Centroid scan #', num2str(count)];
                 structInfo.traceType    = obj.Datasets{1}.Format;
                 structInfo.XLabel       = obj.Datasets{1}.YLabel;
@@ -290,6 +270,8 @@ end
 if exist('h', 'var'), close(h); end
 
 fclose(fidRead);
+
+% iv. Ending with scan list, creating Finnee and Dataset
 
 structInfo.XLabel     	= obj.Datasets{1}.XLabel;
 structInfo.XUnit      	= obj.Datasets{1}.XUnit;

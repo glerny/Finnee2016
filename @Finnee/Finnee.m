@@ -41,6 +41,8 @@
 %
 %% Copyright 
 % Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 classdef Finnee
@@ -80,10 +82,14 @@ classdef Finnee
         end
         
         function toMZML(obj, dts)
+            % TOBE DONE
         end
         
         function obj = doBaselinePrf(obj, dts, par4bas)
-            m = length(obj.Datasets) + 1;
+            % Allow to correct a full dataset from baseline drift.
+            % Description and more information @ 
+            % https://github.com/glerny/Finnee2016/wiki/Baseline-and_noise-correction
+            %
             newDts = doBslCor_old(obj.Datasets{dts}, par4bas, ...
                 obj.Path2Fin, obj.Options.MaxFileSize, m);
             newDts.CreatedFrom = obj.Datasets{dts}.Log;
@@ -99,6 +105,7 @@ classdef Finnee
         end
         
         function obj = doCentroid(obj, dts, par4ctr)
+            % TO BE FINISH, tested and published
 %             m = length(obj.Datasets) + 1;
 %             newDts = doCtr(obj.Datasets{dts}, par4ctr, ...
 %                 obj.Path2Fin, obj.Options.MaxFileSize, m);
@@ -110,6 +117,7 @@ classdef Finnee
         end
         
         function obj = remNoise(obj, dts, varargin)
+            % TO BE FINISH, tested and published
 %             % the implemented filtes are:
 %             % - 'spikes' - followed by 1 or 2 (length of spikes as pts)
 %             % - 'filterMS'- followed by a boolean array of the same length
