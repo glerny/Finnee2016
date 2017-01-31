@@ -1,6 +1,6 @@
 BSD 3-Clause License
 
-Copyright (c) 2016, Guillaume Erny
+Copyright (c) 2016-2017, Guillaume Erny
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
