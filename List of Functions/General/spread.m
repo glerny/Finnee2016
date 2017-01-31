@@ -1,3 +1,13 @@
+%% DESCRIPTION
+%
+%% Copyright 
+% BSD 3-Clause License
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+
+
 function A = spread( yy, wdz)
 
 A = zeros(length(yy), 2*wdz + 1);

@@ -1,8 +1,20 @@
-function [z, bslPts] = doPF(XY, n)
-% BSD 3-Clause License
-% Copyright(c) 2017, Guillaume Erny All rights reserved.
-%
+%% Description
+% Polynomial fitting
 % Unpublished results
+%
+%% Copyright 
+% BSD 3-Clause License
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+function [z, bslPts] = doPF(XY, n)
+% input: XY 2xn array,
+%        n order iof the polynomial
+% output:
+%        z basline model
+%        bslPts false if peak pts, true in baseline pts
 
 N = length(XY(:,1));
 w = ones(N, 1);

@@ -1,4 +1,3 @@
-function indOut = findCloser(valorIn, vectorIn)
 %% DESCRIPTION
 %FINDCLOSER is used the closest valor to calorIn in the vector (Xx1 array)
 %vectorIn
@@ -13,8 +12,13 @@ function indOut = findCloser(valorIn, vectorIn)
 %       indOut in the indice in vectorIn where the closest valor to valorIn
 %       can be found
 %
-%% COPYRIGHT
-% Copyright 2014-2015 G. Erny (guillaume.erny@finnee.com), FEUP, Porto, Portugal
+%% Copyright 
+% BSD 3-Clause License
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+function indOut = findCloser(valorIn, vectorIn)
 
 %% FUNCTION CORE
 

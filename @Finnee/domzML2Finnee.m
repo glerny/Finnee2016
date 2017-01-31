@@ -4,6 +4,7 @@
 % file to a Finnee object.
 %
 %% Copyright 
+% BSD 3-Clause License
 % Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,9 +1,21 @@
-function [z, bslPts] = doArPLS(y, lambda, ratio)
-% Estimate baseline with arPLS in MATLAB
+%% Description
+% DOARPLS Estimate baseline with arPLS in MATLAB
 % Function published in :
 % Baek, S.-J., Park, A., Ahn, Y.-J., Choo, J. (2015) 
 % "Baseline correction using asymmetrically reweighted penalized least 
 % squares smoothing" Analyst, 140, 250-257. doi: 10.1039/c4an01061b
+%
+%% Copyright 
+% Copyright 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+function [z, bslPts] = doArPLS(y, lambda, ratio)
+% input: y y values, 
+%       z basline model
+% output:
+%       bslPts false if peak pts, true in baseline pts
 
 N = length(y);
 D = diff(speye(N), 2);

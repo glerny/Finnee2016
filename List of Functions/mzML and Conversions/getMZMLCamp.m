@@ -1,3 +1,12 @@
+%% DESCRIPTION
+%
+%% Copyright 
+% BSD 3-Clause License
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+
 function [LDR, curLine] = getMZMLCamp(curLine, fidRead)
 % Get the data_label and associated data-set from mzML line(s)
 curLine = strtrim(curLine); %remove leading and trailing white spaces

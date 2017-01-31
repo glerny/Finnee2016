@@ -1,3 +1,12 @@
+%% DESCRIPTION
+%
+%% Copyright 
+% BSD 3-Clause License
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+
 function [bool, K, field] = fieldfind( structIn, label)
 bool = 0; K = nan; field = {};
 for ii = 1:length(structIn)

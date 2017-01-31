@@ -1,5 +1,19 @@
+%% Description
+% DOBSLCORPREF correct a profile mode dataset from baseline drift and 
+% background noise. Description and more information @ 
+% https://github.com/glerny/Finnee2016/wiki/Baseline-and_noise-correction
+%
+%% Copyright 
+% BSD 3-Clause License
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 function dtsOut = doBslCorPrf(dtsIn, par4bas, path2Dir, MaxFileSize, m)
-tic
+
+% 1. Initiation
+
 dtsOut = dtsIn;
 dtsOut.Title = 'Baseline corrected profile dataset';
 dtsOut.LAST = Trace;
@@ -14,11 +28,12 @@ if nargin == 4
     m = NaN;
 end
 
-Link2CorPrf = tempname;
 nbrProf = sum(par4bas.obj.IndMax);
 lengthTm = length(par4bas.obj.TimeAxe.Data);
 fidRead = fopen(par4bas.obj.Link2SelPrf, 'rb');
 PrfMat = fread(fidRead, [nbrProf, lengthTm], par4bas.obj.Precision);
+
+% 2. Basline correction of selected profiles
 
 h = waitbar(0,'Correcting profiles');
 for ii = 1:nbrProf
@@ -104,6 +119,8 @@ dataMZ(:,1)  = axeY;
 dataMZ(:,4)  = 0;
 dataPrf(:,1) = axeX;
 dataPrf(:,3) = 0;
+
+% 3. correction of scans and noise removal
 
 for ii = [1: wdz, (length(axeX) - wdz):length(axeX)]
     dtsOut.Path2Dat{fln} = fullfile(path2Dir, rndStr);

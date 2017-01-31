@@ -1,7 +1,18 @@
+%% Description
+% DOARPLS2 modified arPLS algorithm. Function published in:
+%
+%% Copyright 
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 function [z, bslPts] = doArPLS2(y, lambda)
-% Estimate baseline with arPLS in MATLAB
-% Function modified from the work of Baek and co-worker
-% Analyst, 2015, 140, 250-257. doi: 10.1039/c4an01061b
+% input: 
+%       y y values, 
+% output:
+%       z basline model
+%       bslPts false if peak pts, true in baseline pts
 
 N = length(y);
 D = diff(speye(N), 2);
