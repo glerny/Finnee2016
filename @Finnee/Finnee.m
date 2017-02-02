@@ -91,6 +91,8 @@ classdef Finnee
             % Description and more information @ 
             % https://github.com/glerny/Finnee2016/wiki/Baseline-and_noise-correction
             %
+
+            m = length(obj.Datasets) + 1;
             newDts = doBslCor_old(obj.Datasets{dts}, par4bas, ...
                 obj.Path2Fin, obj.Options.MaxFileSize, m);
             newDts.CreatedFrom = obj.Datasets{dts}.Log;
