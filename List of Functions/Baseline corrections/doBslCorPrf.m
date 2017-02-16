@@ -141,7 +141,7 @@ for ii = [1: wdz, (length(axeX) - wdz):length(axeX)]
     provMat(:,3)            = [0; XMS(1:end-1, 2)];
     XMS                     = XMS(sum(provMat, 2) > 0, :);
     structInfo.title        = ['Profile scan #', num2str(ii)];
-    structInfo.Variables    = dtsIn.ListOfScans{ii}.Variables;
+    structInfo.Variables    = 0;
     dtsOut.ListOfScans{ii}  = Trace(structInfo, XMS);
     
     s = dir(structInfo.Path2Dat);
@@ -187,7 +187,7 @@ for ii = 2*wdz+2:length(axeX)
     provMat(:,3)            = [0; XMS(1:end-1, 2)];
     XMS                     = XMS(sum(provMat, 2) > 0, :);
     structInfo.title        = ['Profile scan #', num2str(ii-wdz-1)];
-    structInfo.Variables    = dtsIn.ListOfScans{ii-wdz-1}.Variables;
+    structInfo.Variables    = 0;
     dtsOut.ListOfScans{ii-wdz-1}  = Trace(structInfo, XMS);
     
     s = dir(structInfo.Path2Dat);
