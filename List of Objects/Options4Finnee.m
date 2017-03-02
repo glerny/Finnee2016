@@ -26,7 +26,7 @@ classdef Options4Finnee
         TMLim       = [0 inf]
         
         % Remove spikes
-        RemSpks     = false
+        RemSpks     = true
         SpksSz      = 2
     end
     
@@ -50,10 +50,15 @@ classdef Options4Finnee
             if ~isempty(tgtIx)
                 obj.Rounding = VAR{tgtIx +1};
             end
-            tgtIx               = input('remSpikes');
+            tgtIx               = input('spikes');
             if ~isempty(tgtIx)
-                obj.RemSpks     = true;
-                obj.SpksSz      = VAR{tgtIx +1};
+                spks = VAR{tgtIx +1};
+                if spks == 0
+                    obj.RemSpks     = false;
+                else
+                    obj.RemSpks     = true;
+                    obj.SpksSz      = spks;
+                end
             end
             tgtIx               = input('fileIn');
             if ~isempty(tgtIx);

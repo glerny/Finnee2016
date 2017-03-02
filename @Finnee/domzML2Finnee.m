@@ -216,6 +216,30 @@ while count <= scanCount
                 
                 % Filter spikes if needed
                 if obj.Options.RemSpks
+                    if ~(obj.Options.SpksSz == 1 || obj.Options.SpksSz == 2 ...
+                            || obj.Options.SpksSz == 3)
+                        error('The only allowed value are 1, 2 or 3')
+                    end
+                    
+                    if obj.Options.SpksSz == 3
+                        findZeros = find(MS(:,2) == 0);
+                        ind2null = findZeros(diff(findZeros) > 3 ...
+                            & diff(findZeros) <= 4);
+                        MS(ind2null+1, 2) = 0;
+                    end
+                    
+                    if obj.Options.SpksSz == 2 || obj.Options.SpksSz == 3
+                        findZeros = find(MS(:,2) == 0);
+                        ind2null = findZeros(diff(findZeros) > 2 ...
+                            & diff(findZeros) <= 3);
+                        MS(ind2null+1, 2) = 0;
+                    end
+                    
+                    findZeros = find(MS(:,2) == 0);
+                    ind2null = findZeros(diff(findZeros) > 1 ...
+                        & diff(findZeros) <=2);
+                    MS(ind2null+1, 2) = 0;
+                    
                 end
                 
                 % reduced MS data by keeping only one trailing zero

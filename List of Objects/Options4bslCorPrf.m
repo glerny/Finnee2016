@@ -45,7 +45,6 @@ classdef Options4bslCorPrf
             obj.FIS         = DtsIn.FIS.Data(:,2)/...
                 length(DtsIn.TimeAxe.Data)*100;
             obj.Link2SelPrf = tempname;
-            obj.Link2RemPrf = tempname;
             obj.Precision   = 'uint32';
             
             figure
@@ -81,43 +80,25 @@ classdef Options4bslCorPrf
             
             h = waitbar(0, 'Generating matrix of profiles');
             fidWSelPrf = fopen(obj.Link2SelPrf, 'ab');
-            fidWRemPrf = fopen(obj.Link2RemPrf , 'ab');
-            
             profile(:,1) = DtsIn.TimeAxe.Data;
-            data(:,1) = obj.MzAxe.Data;
+            
             for ii = 1:length(profile(:,1))
                 waitbar(ii/length(profile(:,1)))
+                MS  = DtsIn.xpend(DtsIn.ListOfScans{ii});
                 
-                data(:,2) = 0;
-                MS = DtsIn.ListOfScans{ii}.Data;
-                cst = DtsIn.ListOfScans{ii}.Variables;
-                rdg = DtsIn.RndFactor;
-                axe = MS(:,1)/(1-cst);
-                [tf, loc] = ismember(round(axe*10^rdg)/10^rdg, ...
-                    round(data(:,1)*10^rdg)/10^rdg);
-                
-                indZeros = find(tf == 0);
-                if ~isempty(indZeros)
-                    [~, locc] = ismember(ceil(axe*10^rdg)/10^rdg, ...
-                        ceil(data(:,1)*10^rdg)/10^rdg);
-                    loc(indZeros) = locc(indZeros);
-                end
-                data(loc,2) =  MS(:,2);
-                
-                
-                fwrite(fidWSelPrf, data(obj.IndMax, 2), obj.Precision);
-                profile(ii,2) = max( data(obj.IndMin, 2));
-                profile(ii,3) = sum( data(obj.IndMax, 2));
-                profile(ii,4) = max( data(obj.IndMax, 2));
-                fwrite(fidWRemPrf, data(~obj.IndMax, 2), obj.Precision);
-                profile(ii,5) = sum(data(~obj.IndMax, 2));
-                profile(ii,6) = max( data(~obj.IndMax, 2));
+                fwrite(fidWSelPrf, MS(obj.IndMax, 2), obj.Precision);
+                matRes(:, ii) =  MS(obj.IndMax, 2);
+                profile(ii,2) = max( MS(obj.IndMin, 2));
+                profile(ii,3) = sum( MS(obj.IndMax, 2));
+                profile(ii,4) = max( MS(obj.IndMax, 2));
+                profile(ii,5) = sum(MS(~obj.IndMax, 2));
+                profile(ii,6) = max( MS(~obj.IndMax, 2));
                 
                 
             end
+            assignin('base', 'matRes', matRes)
             close(h)
             fclose(fidWSelPrf);
-            fclose(fidWRemPrf);
             obj.Profiles = profile;
             
             figure('Name', 'Selected Profiles for Baseline Corrections')

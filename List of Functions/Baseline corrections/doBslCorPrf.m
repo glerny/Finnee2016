@@ -1,5 +1,5 @@
 %% Description
-% DOBSLCORPREF correct a profile mode dataset from baseline drift and 
+% DOBSLCORPRF corrects a profile mode dataset from baseline drift and 
 % background noise. Description and more information @ 
 % https://github.com/glerny/Finnee2016/wiki/Baseline-and_noise-correction
 %
@@ -32,8 +32,9 @@ nbrProf = sum(par4bas.obj.IndMax);
 lengthTm = length(par4bas.obj.TimeAxe.Data);
 fidRead = fopen(par4bas.obj.Link2SelPrf, 'rb');
 PrfMat = fread(fidRead, [nbrProf, lengthTm], par4bas.obj.Precision);
+fclose(fidRead);
 
-% 2. Basline correction of selected profiles
+% 2. Baseline correction of selected profiles
 
 h = waitbar(0,'Correcting profiles');
 for ii = 1:nbrProf
@@ -42,7 +43,6 @@ for ii = 1:nbrProf
     
     switch par4bas.type
         case 'None'
-            parameter = par4bas.parameter;
             bsl = zeros(length(yy(:,2)), 1);
             yy = Prf - bsl;
             indNeg = yy <= 0;
@@ -80,7 +80,7 @@ for ii = 1:nbrProf
     end
     PrfMat(ii, :) = yy';
 end
-fclose(fidRead);
+
 try
     close(h)
 catch
@@ -129,6 +129,36 @@ for ii = [1: wdz, (length(axeX) - wdz):length(axeX)]
     XMS = dtsIn.xpend(dtsIn.ListOfScans{ii});
     Corr = PrfMat(:,ii);
     XMS(par4bas.obj.IndMax, 2) = Corr;
+    
+    
+    %%%%%%%%%%%%% START OF MODIFICATION %%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%% 02/03/2017 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % extra baseline correction in Mz dimention
+    prf = XMS(:,2);
+    notZeros = find(prf ~= 0);
+    [baseline, ~] =  doArPLS2(prf(notZeros), 1E5);
+    bsl = zeros(length(prf), 1);
+    bsl(notZeros) = round(baseline);
+    XMS(:,2) = XMS(:,2) - bsl;
+    XMS(XMS(:,2) <= 0, 2) = 0;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%% END OF MODIFICATION %%%%%%%%%%%%%%%%%%%%%
+    
+    
+    %%%%%%%%%%%%% START OF MODIFICATION %%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%% 02/03/2017 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % spikes removals ( n = 2;
+    findZeros = find(XMS(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 2 ...
+        & diff(findZeros) <= 3);
+    XMS(ind2null+1, 2) = 0;
+    findZeros = find(XMS(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 1 ...
+        & diff(findZeros) <=2);
+    XMS(ind2null+1, 2) = 0;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%% END OF MODIFICATION %%%%%%%%%%%%%%%%%%%%%
+    
     dataMZ(:,2)    = dataMZ(:,2) + XMS(:,2);
     iNZ = XMS(:,2) > 0;
     dataMZ(iNZ, 3) = dataMZ(iNZ, 3) + 1;
@@ -175,6 +205,22 @@ for ii = 2*wdz+2:length(axeX)
     MSCur(ind2cut) = 0;
     XMS = axeY;
     XMS(:,2) = MSCur;
+    
+    
+    %%%%%%%%%%%%% START OF MODIFICATION %%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%% 02/03/2017 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % spikes removals ( n = 2;
+    findZeros = find(XMS(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 2 ...
+        & diff(findZeros) <= 3);
+    XMS(ind2null+1, 2) = 0;
+    findZeros = find(XMS(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 1 ...
+        & diff(findZeros) <=2);
+    XMS(ind2null+1, 2) = 0;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%% END OF MODIFICATION %%%%%%%%%%%%%%%%%%%%%
+    
     dataMZ(:,2)    = dataMZ(:,2) + XMS(:,2);
     iNZ = XMS(:,2) > 0;
     dataMZ(iNZ, 3) = dataMZ(iNZ, 3) + 1;
@@ -201,6 +247,21 @@ for ii = 2*wdz+2:length(axeX)
     XMS = dtsIn.xpend(dtsIn.ListOfScans{ii});
     Corr = PrfMat(:,ii);
     XMS(par4bas.obj.IndMax, 2) = Corr;
+    
+    
+    %%%%%%%%%%%%% START OF MODIFICATION %%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % extra baseline correction in Mz dimention
+    prf = XMS(:,2);
+    notZeros = find(prf ~= 0);
+    [baseline, ~] =  doArPLS2(prf(notZeros), 1E5);
+    bsl = zeros(length(prf), 1);
+    bsl(notZeros) = round(baseline);
+    XMS(:,2) = XMS(:,2) - bsl;
+    XMS(XMS(:,2) <= 0, 2) = 0;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%% END OF MODIFICATION %%%%%%%%%%%%%%%%%%%%%
+    
     M4C = [M4C(:, 2:end), XMS(:,2)];
 end
 try
