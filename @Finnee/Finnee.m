@@ -107,61 +107,57 @@ classdef Finnee
             save(fullfile(obj.Path2Fin, 'myFinnee.mat'), 'myFinnee')
         end
         
-        function obj = doCentroid(obj, dts, par4ctr)
-            % TO BE FINISH, tested and published
-%             m = length(obj.Datasets) + 1;
-%             newDts = doCtr(obj.Datasets{dts}, par4ctr, ...
-%                 obj.Path2Fin, obj.Options.MaxFileSize, m);
-%             newDts.CreatedFrom = obj.Datasets{dts}.Log;
-%             obj.Datasets{end+1} = newDts;
-%             
-%             myFinnee = obj;
-%             save(fullfile(obj.Path2Fin, 'myFinnee.mat'), 'myFinnee')
+        function obj = doCentroid(obj, dts, method)
+            % doCentroid is used to run the "centroid algorithms" defined 
+            % in method. Method shopuld contain the algorithms and
+            % associated parameters in the following format: 
+            % 'thisMethos:par1:par2'. List of accepted methods:
+            %   'LocalMax:par1': 
+            %           LocalMax detect every local maxima as any
+            %           points that is higher or equal than the par1 
+            %           closest neighbours in each side, By default 
+            %           par1 = 1
+            %
+            % examples: 
+            %   myFinnee = myFinnee.doCentroid(1, 'LocalMax:2');
+            %
+            % Description and more information @ 
+            % https://github.com/glerny/Finnee2016/wiki/Baseline-and_noise-correction
+            
+            m = length(obj.Datasets) + 1;
+            narginchk(2, 3); 
+            if nargin == 2
+                method = 'LocalMax:1';
+            end
+            
+            % 1. Checking the entry parameters
+            
+            if ~strcmp(obj.Datasets{dts}.Format, 'MS profile')
+                error('Error. \n Target dataset should be in MS profile format. \n Dataset %i is in %s format',...
+                    dts, obj.Datasets{dts}.Format)
+            end
+            
+            mth = strsplit(method, ':');
+            switch  lower(mth{1})
+                case 'localmax'
+                    algo.name = 'localmax';
+                    if length(mth) == 1;
+                        algo.prm{1} = 1;
+                    else
+                        algo.prm{1} = str2double(mth{2});
+                    end
+                otherwise
+                    error('Error. \n Centroid algorithm not recognised');
+            end
+            
+            newDts = doCtr(obj.Datasets{dts}, algo, ...
+                obj.Path2Fin, obj.Options.MaxFileSize, m);
+            newDts.CreatedFrom = obj.Datasets{dts}.Log;
+            obj.Datasets{end+1} = newDts;
+            
+            myFinnee = obj;
+            save(fullfile(obj.Path2Fin, 'myFinnee.mat'), 'myFinnee')
         end
-        
-        function obj = remNoise(obj, dts, varargin)
-            % TO BE FINISH, tested and published
-%             % the implemented filtes are:
-%             % - 'spikes' - followed by 1 or 2 (length of spikes as pts)
-%             % - 'filterMS'- followed by a boolean array of the same length
-%             % as the MZ axes with true for mz calues to remove and false
-%             % for the one to keep (i.e. filter =
-%             % myFinnee.Datasets{2}.BIS.Data(:,2) <= 1000)
-%                 
-%             switch lower(varargin{1})
-%                 case 'spikes'
-%                     if ~strcmp(obj.Datasets{dts}.Format, 'MS profile')
-%                         error('Error.\nDataset %i shuld be MS profile as format.\n not %s',...
-%                             dts, obj.Datasets{dts}.Format)
-%                     end
-%                     m = length(obj.Datasets) + 1;
-%                     newDts = remSpikes(obj.Datasets{dts}, varargin{2}, obj.Path2Dat, m);
-%                     newDts.CreatedFrom = obj.Datasets{dts}.Log;
-%                     newDts.Log = ['MSPROFDTS DTS=', num2str(m), ...
-%                         ' SPK=', num2str( varargin{2})];
-%                     
-%                 case 'filtermz'
-%                     if ~strcmp(obj.Datasets{dts}.Format, 'MS profile')
-%                         error('Error.\nDataset %i shuld be MS profile as format.\n not %s',...
-%                             dts, obj.Datasets{dts}.Format)
-%                     end
-%                     m = length(obj.Datasets) + 1;
-%                     newDts = filterByMZ(obj.Datasets{dts}, varargin{2}, ...
-%                         obj.Path2Fin, obj.Options.MaxFileSize, m);
-%                     newDts.CreatedFrom = obj.Datasets{dts}.Log;
-%                     newDts.Log = ['MSPROFDTS DTS=', num2str(m), ...
-%                         ' FMZ=1'];
-%                     
-%                 otherwise
-%                     error('Error.\nThe method %s does not exist in this context',...
-%                         varargin{1})
-%             end
-%             
-%             obj.Datasets{end+1} = newDts;
-%                         
-%             myFinnee = obj;
-%             save(fullfile(obj.Path2Fin, 'myFinnee.mat'), 'myFinnee')
-         end
          
     end
     

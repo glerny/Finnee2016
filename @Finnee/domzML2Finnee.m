@@ -261,19 +261,21 @@ while count <= scanCount
             elseif strcmp(obj.Datasets{1}.Format, 'MS centroid')
                 % 2. Do if a scan is centroid mode
                 
+                obj.Datasets{1}.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr) ;
+                
                 structInfo.title        = ['Centroid scan #', num2str(count)];
                 structInfo.traceType    = obj.Datasets{1}.Format;
                 structInfo.XLabel       = obj.Datasets{1}.YLabel;
                 structInfo.XUnit        = obj.Datasets{1}.YUnit;
                 structInfo.YLabel       = obj.Datasets{1}.ZLabel;
                 structInfo.YUnit        = obj.Datasets{1}.ZUnit;
-                structInfo.link2file    = path2dat;
+                structInfo.Path2Dat     = obj.Datasets{1}.Path2Dat{fln} ;
                 structInfo.Variables    = 0;
                 structInfo.Precision    = 'single';
-                structInfo.Path2Finnee  = obj.Path;
+                structInfo.Path2Fin     = obj.Path2Fin;
                 structInfo.Log          = 'CTRMSSCN DTS=1';
                 obj.Datasets{1}.ListOfScans{count} = Trace(structInfo, MS);
-                axeMZ = [0 0 0 ];
+                axeMZ = [0 0 0 0];
             end
             
             allProfiles(count, 2) = sum(MS(:,2));
