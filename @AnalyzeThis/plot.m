@@ -1,3 +1,15 @@
+%% DESCRIPTION
+% the PLOT method allows to check the goodness of the baseline correction
+% and peak picking algorithm, as well as obtain the figure of merits (area,
+% center and variance) from a hand selected peak. This is done by right
+% clicking on the bottom figure
+%
+%% Copyright
+% BSD 3-Clause License
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function plot(obj)
 figure
 XY = obj.TraceIn.Data;
