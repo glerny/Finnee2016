@@ -11,10 +11,12 @@ function mzMLDump = readMZML( fidRead, stopLabel)
 
 frewind(fidRead);
 mzMLDump.fLine = fgetl(fidRead);
-curLine = fgetl(fidRead);
-[LDR, ~] = getMZMLCamp(curLine, fidRead);
-[outStrc, ~] = addChildNode(LDR, fidRead, true, stopLabel);
-mzMLDump.struct = outStrc;
+mzML{1}        = mzMLDump.fLine;
+curLine        = fgetl(fidRead);
+mzML{2}        = curLine;
+[LDR, ~]       = getMZMLCamp(curLine, fidRead);
+[outStrc, ~, mzML] = addChildNode(LDR, fidRead, true, stopLabel, mzML);
+mzMLDump = mzML;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -23,7 +25,7 @@ end
 
 
 
-function [outStrc, SB] = addChildNode(LDR, fidRead, SB, stopLabel)
+function [outStrc, SB, mzML] = addChildNode(LDR, fidRead, SB, stopLabel, mzML)
 outStrc = struct;
 outStrc.(LDR.label).attributes = LDR.attributes;
 outStrc.(LDR.label).text= LDR.text;
@@ -41,8 +43,9 @@ if LDR.open
     endLabel = ['/', LDR.label];
     parentLabel = LDR.label;
     while SB
-        curLine = fgetl(fidRead);
-        [LDR, ~] = getMZMLCamp(curLine, fidRead);
+        curLine     = fgetl(fidRead);
+        mzML{end+1} = curLine;
+        [LDR, ~]    = getMZMLCamp(curLine, fidRead);
         
         if strcmp(stopLabel, LDR.label)
             SB = false;
@@ -55,7 +58,7 @@ if LDR.open
         if ~isfield(outStrc.(parentLabel), LDR.label)
             outStrc.(parentLabel).(LDR.label) = {};
         end
-        [s, SB] = addChildNode(LDR, fidRead, SB, stopLabel);
+        [s, SB, mzML] = addChildNode(LDR, fidRead, SB, stopLabel, mzML);
         
         outStrc.(parentLabel).(LDR.label){end+1} = s.(LDR.label);
     end

@@ -1,5 +1,7 @@
 function output = zlibdecode(input)
-%ZLIBDECODE Decompress input bytes using ZLIB.
+% Copyright (c) 2012, Kota Yamaguchi
+% http://www.mathworks.com/matlabcentral/fileexchange/39526-byte-encoding-utilities/content/encoder/zlibdecode.m
+% ZLIBDECODE Decompress input bytes using ZLIB.
 %
 %    output = zlibdecode(input)
 %
