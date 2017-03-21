@@ -39,13 +39,7 @@ classdef AnalyzeThis
         %   'localMax:pm1:pm2'
         %       Detect local Maxima, p1 is the number of neighbourgh used
         %       to detect the local maximum (1:10), p2 is an intensity
-        %       threshold below witch peaks will not be processed
-        
-        Func4Deconv % A sting with the method name followed by the
-        % necessary parameters e.g. 'methodName:para1:para2:...:paran'
-        % Possible methods:
-        %   'None'          No additional parameter
-        
+        %       threshold below witch peaks will not be processed        
         Options             % Structure with all the options
         
     end
@@ -55,7 +49,6 @@ classdef AnalyzeThis
         SmoothData
         Baseline
         PeakList
-        Fitting
     end
     
     methods
@@ -70,7 +63,6 @@ classdef AnalyzeThis
             end
             
             % Set default parameters
-            obj.Func4Deconv      = 'None';
             obj.Options.NegPts   = true;
             obj.Options.rounding = false;
             obj.Options.XLim     = [0 inf];
@@ -99,13 +91,6 @@ classdef AnalyzeThis
             if ~isempty(tgtIx)
                 obj.PeakPicking  = varargin{tgtIx +1};
             end
-            
-            tgtIx = input('Func4Deconv');
-            if ~isempty(tgtIx)
-                obj.Func4Deconv  = varargin{tgtIx +1};
-            end
-            
-            
         end
         
         function xy = get.XY(obj)
@@ -124,9 +109,6 @@ classdef AnalyzeThis
             if obj.Options.rounding
                 xy(:,2) = round(xy(:,2));
             end
-            
-            
-            
         end
         
         function obj = set.SmoothMethod(obj, value)
@@ -271,30 +253,6 @@ classdef AnalyzeThis
                     baseline.noise = 4*std(nonzeros(XY(baseline.bckgPts,2) ...
                         - baseline.vals(baseline.bckgPts)));
             end
-            
-%             %             if obj.Options.plot == true
-%                             s             = subplot(2,1, 1);
-%                             s.Parent.Name = ['Baseline Method: ', obj.BaseMethod];
-%                             plot(XY(:,1), XY(:,2), 'k');
-%                             title(['Original profile: Noise estimated = ', ...
-%                                 num2str(baseline.noise, '%.0f'), ' ', obj.TraceIn.AxeY.Unit]);
-%                             xlabel([obj.TraceIn.AxeX.Label, ' / ', obj.TraceIn.AxeX.Unit]);
-%                             ylabel([obj.TraceIn.AxeY.Label, ' / ', obj.TraceIn.AxeY.Unit]);
-%                             hold on
-%                             plot(XY(baseline.bckgPts,1), ...
-%                                 XY(baseline.bckgPts,2), 'or');
-%                             plot(XY(:,1), baseline.vals, 'r')
-%                             hold off
-%             
-%                             subplot(2,1, 2);
-%                             y_ =  round(XY(:,2) -  baseline.vals);
-%                             y_ (y_ < 0 ) = 0;
-%                             plot(XY(:,1), y_, 'k');
-%                             title('Corrected profile');
-%                             xlabel([obj.TraceIn.AxeX.Label, ' / ', obj.TraceIn.AxeX.Unit]);
-%                             ylabel([obj.TraceIn.AxeY.Label, ' / ', obj.TraceIn.AxeY.Unit]);
-%             %
-%             %             end
         end
         
         function obj = set.PeakPicking(obj, value)
@@ -347,64 +305,7 @@ classdef AnalyzeThis
                         'peakWidth@05'};
                     peakList.H4CTR    = {'AM1', 'IT1', 'OT1'};
                     peakList.Data     = XYpl;
-                    
-%                     %if obj.Options.plot == true
-%                         figure('Name', ...
-%                             ['Peak picking Method: ', obj.PeakPicking]);
-%                         plot(XY(:,1), XY(:,2), 'k');
-%                         xlabel([obj.TraceIn.AxeX.Label, ...
-%                             ' / ', obj.TraceIn.AxeX.Unit]);
-%                         ylabel([obj.TraceIn.AxeY.Label, ...
-%                             ' / ', obj.TraceIn.AxeY.Unit]);
-%                         hold on
-%                         stem(XYpl(:,1), XYpl(:,2), 'r');
-%                         hold off
-%                    % end
             end
-        end
-        
-        function obj = set.Func4Deconv(obj, value)
-            basDef =  strsplit(value, ':');
-            
-            switch lower(basDef{1})
-                case 'none'
-                    obj.Func4Deconv = 'None';
-                    
-                case 'gauss'
-                    obj.Func4Deconv = 'Gauss';
-                    
-                case 'emg'
-                    obj.Func4Deconv = 'EMG';
-                    
-                case 'pmg2'
-                    obj.Func4Deconv = 'PMG2';
-                    
-                otherwise
-                    error('%s is not a recognised peak function',...
-                        basDef{1});
-            end
-        end
-        
-        function fitting = get.Fitting(obj)
-            basDef =  strsplit(obj.Func4Deconv, ':');
-            if strcmp(basDef{1}, 'None')
-                fitting = {};
-                return
-            end
-            
-            prmIn = obj.PeakList.Data;
-            if isempty(prmIn)
-                fitting = {};
-                return
-            end
-            
-            basDef     = regexp(obj.Func4Deconv, ':', 'split');
-            XY         = obj.XY;
-            prmIn(:,3) = (prmIn(:,3)/2.355);
-            
-            [fitting.FitPrm, fitting.Int, fitting.model, fitting.SSE] = ...
-                doPeakMinimization(XY(:,1), XY(:,2), basDef{1}, ...
-                prmIn(:, [1,3]));
         end
     end
 end

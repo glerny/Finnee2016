@@ -21,23 +21,26 @@ xlabel([obj.TraceIn.AxisX.Label, ' / ', obj.TraceIn.AxisX.Unit]);
 ylabel([obj.TraceIn.AxisY.Label, ' / ', obj.TraceIn.AxisY.Unit]);
 
 
-subplot(2, 1, 2);
+sb = subplot(2, 1, 2);
 XY = obj.XY;
-plot(XY(:,1), XY(:,2), '--k');
-title('Peak picking and peak fitting')
+plotline = plot(XY(:,1), XY(:,2), 'k');
+title('Peak picking and figure of merits')
 PL  = obj.PeakList;
 hold on
 stem(PL.Data(:,1), PL.Data(:,2), 'r')
 hold off
-dcP = obj.Fitting;
-if ~isempty(dcP)
-    hold on
-    for ii = 1:length(dcP.Int)
-        plot(XY(:,1), dcP.Int(ii)* dcP.model(ii, :), 'b');
-    end
-    hold off
-end
     
 xlabel([obj.TraceIn.AxisX.Label, ' / ', obj.TraceIn.AxisX.Unit]);
 ylabel([obj.TraceIn.AxisY.Label, ' / ', obj.TraceIn.AxisY.Unit]);
+
+c = uicontextmenu;
+plotline.UIContextMenu = c;
+% Set c to be the plot line's UIContextMenu
+% Create menu items for the uicontextmenu
+uimenu(c,'Label','FiguresOfMerits' ,'Callback',@getFOM);
+    function getFOM(~,~)
+        axis(sb);
+        
+    end
+
 end
