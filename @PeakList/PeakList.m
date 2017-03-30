@@ -10,7 +10,6 @@ classdef PeakList
         LstPIP
         FOM
         Path2PkL
-        Refining
     end
     
     methods
@@ -37,7 +36,6 @@ classdef PeakList
             InfoTrc.Loc  = 'inTrace';
             obj.TIP      = Trace(InfoTrc, dtsIn.TIP.Data);
             [obj.Path2PkL, ~, ~] = fileparts(dtsIn.InfoDts.Path2Dat{1});
-            obj.Refining = {};
 
             LoPts = [];
             X      = obj.AxisX.Data;

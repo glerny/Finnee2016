@@ -17,7 +17,7 @@ set(dcm_obj,'UpdateFcn',@myupdatefcn);
 pH      = plot(obj.BPP.Data(IdS:IdE,1), obj.BPP.Data(IdS:IdE,2));
 pH.Tag  = 'pH';
 hold on
-sH      = stem(obj.FOM.Data(:,3), obj.FOM.Data(:,2));
+sH      = stem(obj.FOM.Data(:,5), obj.FOM.Data(:,2));
 sH.Tag  = 'sH';
 title('Centergram plot')
 xlabel([infoX.Label, ' / ', infoX.Unit]);
@@ -39,18 +39,19 @@ ylabel([infoZ.Label, ' / ', infoZ.Unit]);
             case 'sH'
                 M1   = pos(1);
                 IMax = pos(2);
-                Id   = find(obj.FOM.Data(:,3) == M1 & obj.FOM.Data(:,2) == IMax);
+                Id   = find(obj.FOM.Data(:,5) == M1 & obj.FOM.Data(:,2) == IMax);
                 cFOM = obj.FOM.Data(Id,:);
                 zrtL = ['PIP # ', num2str(cFOM(1))];
                 fstl = ['Time @ pk max: ',  num2str(cFOM(3), foX), ...
                     ' ', infoX.Unit];
                 sndl = ['Pk Area: ',  num2str(cFOM(4), foZ), ...
-                    ' ', infoZ.Unit];
-                thrl = ['Mean m/z: ', num2str(cFOM(8), foY), ...
-                    ' (', num2str(sqrt(cFOM(9)), foY), ')'];
-                txt = {zrtL, fstl, sndl, thrl};
-                
+                    ' ', infoZ.Unit];               
                 cPIP = obj.LstPIP{Id};
+                AM   = sum(cPIP.Data(:,1).*cPIP.Data(:,2))/...
+                    sum(cPIP.Data(:,2));
+                thrl = ['Acc. Mass: ', num2str(AM, foY)];
+                txt = {zrtL, fstl, sndl, thrl};
+
                 cPIP.plot(sprintf('PIP #%u', Id));
         end
     end

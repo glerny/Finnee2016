@@ -102,6 +102,8 @@ classdef PIP
                 , '%.3e', ' %s^2'], obj.FOM(5), obj.AxisX.Unit);
             String4Edit{10} = sprintf(['m/z = ', obj.AxisY.fo, ...
                 ' +/- '  obj.AxisY.fo], obj.FOM(7), obj.FOM(8));
+            String4Edit{11} = sprintf(['Accurate mass = ', obj.AxisY.fo],...
+                sum(obj.Data(:,1).*obj.Data(:,2))/sum(obj.Data(:,2)));
             
             
             EditH1 = uicontrol(InputFig ,...
@@ -127,7 +129,6 @@ classdef PIP
             PushH1.Position = [2/3+0.1*wPB1 0+0.1*hPB1  wPB1  hPB1];
             
             function pushMe(source, ~)
-                source.Tag;
             end
             
         end
