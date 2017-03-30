@@ -479,7 +479,7 @@ classdef Finnee
                                     end
                                     
                                     if any(~tf)
-                                        MZ2add = Axis(~tf);
+                                        MZ2add = axis(~tf);
                                         MZ2add(:,2) = intValue(~tf);
                                         indNotZeros = MZ2add(:,2) ~= 0;
                                         MZ2add(indNotZeros,3) = 1 ;
