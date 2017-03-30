@@ -53,6 +53,7 @@ classdef PIP
             FOM(6) = trapz(obj.x, (obj.x-FOM(4)).^3.*obj.y)/FOM(3);
             FOM(7) = mean(obj.Data(:,1));
             FOM(8) = std(obj.Data(:,1));
+            FOM(9) = sum(obj.Data(:,1).*obj.Data(:,2))/sum(obj.Data(:,2));
         end
         
         
@@ -103,7 +104,7 @@ classdef PIP
             String4Edit{10} = sprintf(['m/z = ', obj.AxisY.fo, ...
                 ' +/- '  obj.AxisY.fo], obj.FOM(7), obj.FOM(8));
             String4Edit{11} = sprintf(['Accurate mass = ', obj.AxisY.fo],...
-                sum(obj.Data(:,1).*obj.Data(:,2))/sum(obj.Data(:,2)));
+                obj.FOM(9));
             
             
             EditH1 = uicontrol(InputFig ,...

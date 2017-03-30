@@ -28,7 +28,6 @@ ylabel([infoZ.Label, ' / ', infoZ.Unit]);
         
         tgt = get(event_obj,'Target');
         pos = get(event_obj,'Position');
-        tgt.Tag
         switch tgt.Tag;
             case 'pH'
                 xString = [infoX.Label, ' = ', num2str(pos(1), foX), ...
@@ -45,12 +44,10 @@ ylabel([infoZ.Label, ' / ', infoZ.Unit]);
                 fstl = ['Time @ pk max: ',  num2str(cFOM(3), foX), ...
                     ' ', infoX.Unit];
                 sndl = ['Pk Area: ',  num2str(cFOM(4), foZ), ...
-                    ' ', infoZ.Unit];               
+                    ' ', infoZ.Unit];
+                thrl = ['Acc. Mass: ',  num2str(cFOM(10), foY)];
+                txt = {zrtL, fstl, sndl, thrl};               
                 cPIP = obj.LstPIP{Id};
-                AM   = sum(cPIP.Data(:,1).*cPIP.Data(:,2))/...
-                    sum(cPIP.Data(:,2));
-                thrl = ['Acc. Mass: ', num2str(AM, foY)];
-                txt = {zrtL, fstl, sndl, thrl};
 
                 cPIP.plot(sprintf('PIP #%u', Id));
         end

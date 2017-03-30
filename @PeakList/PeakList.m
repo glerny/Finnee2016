@@ -51,7 +51,7 @@ classdef PeakList
             LoPts(LoPts(:,1) == 0, :) = [];
             obj.LstPIP       = getPIP(LoPts, ThMZ, ThBk, ThIt, minPts, X, obj.options.InfoDts);
             obj.FOM.Headings = {'Id', 'IntMax', 'Tm@IM', 'M0', 'M1',...
-                'M2', 'M3', 'mean(m/z)', 'std(m/z)'};
+                'M2', 'M3', 'mean(m/z)', 'std(m/z)', 'Acc. Mass'};
             for ii = 1:length(obj.LstPIP)
                 obj.FOM.Data(ii, :) = [ii, obj.LstPIP{ii}.FOM];
             end
