@@ -110,11 +110,13 @@ switch MtU{1}
             
             % check the size of the dat file
             s = dir(infoDts.Path2Dat{fln});
+            if ~isempty(s)
             if s.bytes > obj.Options.MaxFileSize;
                 [~, rndStr]           = fileparts(tempname);
                 fln                   = fln + 1;
                 infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
                 infoScn.Path2Dat      = infoDts.Path2Dat{fln};
+            end
             end
         end
 end
