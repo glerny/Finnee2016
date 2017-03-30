@@ -96,7 +96,7 @@ classdef Axis
                         obj.Index(2)= ftell(fidWriteDat);
                         fclose(fidWriteDat);
                         
-                    case 'inAxis'
+                    case 'inaxis'
                         obj.DataStorage  = 'inAxis';
                         obj.Precision    = '';
                         obj.Path2Dat     = '';
