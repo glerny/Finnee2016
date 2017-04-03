@@ -78,8 +78,8 @@ classdef Trace
                 obj.Title      	= infoTrc.Title;
                 obj.FigureTitle = infoTrc.FT;
                 obj.TraceType   = infoTrc.TT;
-                obj.AxisX        = infoTrc.AxisX;
-                obj.AxisY        = infoTrc.AxisY;
+                obj.AxisX       = infoTrc.AxisX;
+                obj.AxisY       = infoTrc.AxisY;
                 obj.DataStorage = infoTrc.Loc;
                 obj.AdiParam    = infoTrc.AdiPrm;
                 

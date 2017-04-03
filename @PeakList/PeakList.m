@@ -1,26 +1,44 @@
+%% DESCRIPTION
+% PeakList is the class that is contain all PIP extracted from a single
+% centroid mode dataset
+% 
+%% LIST OF THE CLASS'S PROPERTIES
+% 
+%% LIST OF THE CLASS'S METHODS
+% 
+%% Copyright
+% BSD 3-Clause License
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 classdef PeakList
     
     properties
-        options
+        options     % Options
         AxisX
         AxisY
         AxisZ
-        BPP
-        TIP
-        LstPIP
-        FOM
-        Path2PkL
+        BPP         % Base peak profile calculated using all the PIPs
+        TIP         % Total ion profile calculated using all the PIPs
+        LstPIP      % List of all the PIP
+        FOM         % summary of all FOMs    
+        % #PIP|max I|time @ max I|M0|M1|M2|M3|mean(m/z)|std(m/z)|AccMass
+        Path2PkL    % where to save
     end
     
     methods
-        function obj = PeakList(dtsIn, ThIt, ThMZ, ThBk, minPts, XLim)
+        function obj = PeakList(dtsIn, ThIt, ThMZ, minPts, XLim) 
+            % creator method will group as PIP any series of points that
+            % does not differ in their m/z by more than ThMZ. PIP will be
+            % recorded only if it contain at least minPts whith at least
+            % one points of intensity higher the ThIt.
             if ~strcmp(dtsIn.Format, 'centroid')
                 error('dtsIn should be centroid mode')
             end
             obj.options.InfoDts = dtsIn.InfoDts;
             obj.options.ThIt    = ThIt;
             obj.options.ThMZ    = ThMZ;
-            obj.options.ThBk    = ThBk;
+            obj.options.ThBk    = 1;
             obj.options.minPts  = minPts;
             obj.options.XLim    = XLim;
             
@@ -49,7 +67,7 @@ classdef PeakList
                 LoPts   = [LoPts ; MS];
             end
             LoPts(LoPts(:,1) == 0, :) = [];
-            obj.LstPIP       = getPIP(LoPts, ThMZ, ThBk, ThIt, minPts, X, obj.options.InfoDts);
+            obj.LstPIP       = getPIP(LoPts, ThMZ, ThIt, minPts, X, obj.options.InfoDts);
             obj.FOM.Headings = {'Id', 'IntMax', 'Tm@IM', 'M0', 'M1',...
                 'M2', 'M3', 'mean(m/z)', 'std(m/z)', 'Acc. Mass'};
             for ii = 1:length(obj.LstPIP)

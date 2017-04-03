@@ -1,12 +1,24 @@
+%% DESCRIPTION
+% PIP is the class that is contain all information related to a single Pure
+% Ion Profile
+% 
+%% LIST OF THE CLASS'S PROPERTIES
+% 
+%% LIST OF THE CLASS'S METHODS
+% 
+%% Copyright
+% BSD 3-Clause License
+% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 classdef PIP
-    %PIP Summary of this class goes here
-    %   Detailed explanation goes here
     
     properties
-        Data
-        x
+        Data    % 3 columns matrix, m/z|Int|Time
+        x       % x axis for this PIP
         IdS
-        AxisX
+        AxisX   
         AxisY
         AxisZ
     end
@@ -16,12 +28,13 @@ classdef PIP
     end
     
     properties (Dependent)
-        y
-        FOM
+        y       % Intensity for this PIP
+        FOM     % Figures of merit
+                % max I|time @ max I|M0|M1|M2|M3|mean(m/z)|std(m/z)|AccMass
     end
     
     methods
-        function obj  = PIP(DataIn, axe, infoDts)
+        function obj  = PIP(DataIn, axe, infoDts) % Creator 
             obj.Data  = DataIn;
             obj.x     = axe(min(DataIn(:,3)):max(DataIn(:,3)));
             obj.IdS   = min(DataIn(:,3));
