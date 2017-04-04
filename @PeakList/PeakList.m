@@ -14,15 +14,18 @@
 classdef PeakList
     
     properties
-        options     % Options
-        AxisX
-        AxisY
-        AxisZ
         BPP         % Base peak profile calculated using all the PIPs
         TIP         % Total ion profile calculated using all the PIPs
         LstPIP      % List of all the PIP
         FOM         % summary of all FOMs    
         % #PIP|max I|time @ max I|M0|M1|M2|M3|mean(m/z)|std(m/z)|AccMass
+    end
+    
+    properties (Hidden)
+        options     % Options
+        AxisX
+        AxisY
+        AxisZ
         Path2PkL    % where to save
     end
     
@@ -35,6 +38,10 @@ classdef PeakList
             if ~strcmp(dtsIn.Format, 'centroid')
                 error('dtsIn should be centroid mode')
             end
+            if nargin < 5
+                XLim = [0 inf];
+            end
+            
             obj.options.InfoDts = dtsIn.InfoDts;
             obj.options.ThIt    = ThIt;
             obj.options.ThMZ    = ThMZ;

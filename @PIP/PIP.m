@@ -85,12 +85,13 @@ classdef PIP
                 'Units'            , 'normalized'     , ...
                 'OuterPosition'    , [0 0 2/3 1]);
             
+            sizePrm = (obj.Data(:,2)/max(obj.Data(:,2))+0.05)*100;
             hold on
             yyaxis left
             hP = plot(AxisH1, obj.x, obj.y);
             yyaxis right
             sP = scatter(AxisH1, ...
-                obj.x(obj.Data(:,3)- min(obj.Data(:,3)) + 1), obj.Data(:,1));
+                obj.x(obj.Data(:,3)- min(obj.Data(:,3)) + 1), obj.Data(:,1), sizePrm);
             
             title('Intensities and accurate masses')
             xlabel([obj.AxisX.Label, ' / ', obj.AxisX.Unit]);
