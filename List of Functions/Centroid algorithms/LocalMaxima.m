@@ -26,8 +26,6 @@ function redMS = LocalMaxima(XY, wdz, thrI)
 % Finding non nul local maxima
 yy = XY(:,2);
 A = zeros(length(yy), 2*wdz + 1);
-assignin('base', 'yy', yy)
-assignin('base', 'wdz', wdz)
 for ii = 1:2*wdz+1;
     ind1 = max(1, wdz+2-ii);
     ind2 = min(length(yy), length(yy) + wdz+1-ii);
