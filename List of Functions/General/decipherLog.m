@@ -6,10 +6,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
-function Log = decipherLog(strLog, lvl)
+function [Log, partial] = decipherLog(strLog)
 
-Log = strsplit(strLog, '|');
-if lvl == 1; return; end;
-
+Log = {};
+partial = strsplit(strLog, '|');
+for ii = 1:size(partial, 2)
+    [token, remain] = strtok(strsplit(partial{ii}, ' '), '=');
+    Log{ii}.dtsType = token{1};
+    Log{ii}.dtsId   = str2double(remain{1}(2:end)); %#ok<*AGROW>
+end
 end
 

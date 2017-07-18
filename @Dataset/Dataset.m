@@ -65,7 +65,9 @@ classdef Dataset
         AxisX           % Axis time
         AxisY           % Axis m/z
         AxisZ           % Axis intensity
-        tol4MZ         % tolerance for comparing MZAxes
+        Path2Fin
+        AddInfo = {};
+	
     end
     
      properties (Dependent)
@@ -90,10 +92,10 @@ classdef Dataset
                 obj.LAST        = Trace;
                 obj.ListOfScans = {};
                 obj.Log         = '';
-                obj.AxisX        = Axis;
-                obj.AxisY        = Axis;
-                obj.AxisZ        = Axis;
-                obj.tol4MZ      = NaN;
+                obj.AxisX       = Axis;
+                obj.AxisY       = Axis;
+                obj.AxisZ       = Axis;
+                obj.Path2Fin    = ''; 
                 
             elseif nargin == 1
                 obj.Title       = infoDts.Title;
@@ -108,10 +110,10 @@ classdef Dataset
                 obj.LAST        = infoDts.LAST;
                 obj.ListOfScans = infoDts.ListOfScans;
                 obj.Log         = infoDts.Log;
-                obj.AxisX        = infoDts.AxisX;
-                obj.AxisY        = infoDts.AxisY;
-                obj.AxisZ        = infoDts.AxisZ;
-                obj.tol4MZ      = infoDts.tol4MZ;
+                obj.AxisX       = infoDts.AxisX;
+                obj.AxisY       = infoDts.AxisY;
+                obj.AxisZ       = infoDts.AxisZ;
+        		obj.Path2Fin    = infoDts.P2F; 
             end
         end
         
@@ -128,44 +130,24 @@ classdef Dataset
                 infoDts.LAST           = Trace(obj.LAST.InfoTrc);
                 infoDts.ListOfScans{1} = Trace(obj.ListOfScans{1}.InfoTrc);
                 infoDts.Log            = obj.Log;
-                infoDts.AxisX           = Axis(obj.AxisX.InfoAxis);
-                infoDts.AxisY           = Axis(obj.AxisY.InfoAxis);
-                infoDts.AxisZ           = Axis(obj.AxisZ.InfoAxis);
-                infoDts.tol4MZ         = obj.tol4MZ;
+                infoDts.AxisX          = Axis(obj.AxisX.InfoAxis);
+                infoDts.AxisY          = Axis(obj.AxisY.InfoAxis);
+                infoDts.AxisZ          = Axis(obj.AxisZ.InfoAxis);
+                infoDts.P2F            = obj.Path2Fin;
         end
         
-        function XMS = xpend(obj, MS, AxisOr)
+        function XMS = xpend(obj, MS)
             if ~strcmp(obj.Format, 'profile')
                 error('xpend is only possible with profile''s type dataset')
             end
-            if nargin == 2, AxisOr = true; end
-            cst = 0;
             infoMS = MS.InfoTrc;
                 
             XMS(:,1) = obj.AxisY.Data;
             if isempty(MS.Data)
                 XMS(:,2) = 0;
-                
             else
-                cst = findValue('AxisMZ normalisation', infoMS.AdiPrm{:});
-                if isempty(cst), cst = 0; end
-                axe = MS.Data(:,1)/(1-cst);
-                tol = obj.tol4MZ;
-                [tf, loc] = ismember(round(axe*10^tol)/10^tol, ...
-                    round(XMS(:,1)*10^tol)/10^tol);
-                indZeros = find(tf == 0);
-                if ~isempty(indZeros)
-                    [~, locc] = ismember(ceil(axe*10^tol)/10^tol, ...
-                        ceil(XMS(:,1)*10^tol)/10^tol);
-                    loc(indZeros) = locc(indZeros);
-                end
-                
-                indNotNull = loc ~= 0;
-                XMS(loc(indNotNull), 2) = MS.Data(indNotNull,2);
-            end
-            
-            if ~AxisOr
-                XMS(:,1) = XMS(:,1)*(1-cst);
+                [~, loc] = ismember(MS.Data(:,1), XMS(:,1));
+                XMS(loc(loc ~= 0), 2) = MS.Data(loc~=0, 2);
             end
             
             infoMS.Title = ['XMS- ', infoMS.Title];

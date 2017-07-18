@@ -86,8 +86,8 @@ switch MtU{1}
                 MSaccM = [];
             end
             infoScn           = Scanii.InfoTrc;
-            Log               = decipherLog(infoDts.Log, 1);
-            infoScn.FT        = Log{1};
+            [~, partial]      = decipherLog(infoDts.Log);
+            infoScn.FT        = partial{1};
             infoScn.Path2Dat  = infoDts.Path2Dat{fln};
             infoScn.Loc       = 'inFile';
             infoScn.Precision = 'single';
@@ -151,6 +151,7 @@ infoPrf.Path2Dat  = infoDts.Path2Dat{fln};
 infoPrf.FT        = infoDts.Log;
 infoPrf.TT        = 'SEP';
 infoPrf.AdiPrm    = {};
+infoPrf.P2Fin     = obj.Path2Fin;
 
 infoPrf.Title     = 'Base Peak Profiles';
 if isempty(allProfiles)

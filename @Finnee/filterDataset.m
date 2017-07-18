@@ -48,8 +48,8 @@ infoDts.Path2Dat = {};
 allProfiles(:,1)    = dtsIn.AxisX.Data;
 allProfiles(:,3)    = 0;
 infoDts.ListOfScans = {};
-AxisMZ               = dtsIn.AxisY.Data;
-AxisMZ(:,4)          = 0;
+AxisMZ              = dtsIn.AxisY.Data;
+AxisMZ(:,4)         = 0;
 fln                 = 1;
 m                   = length(obj.Datasets)+1;
 
@@ -108,41 +108,66 @@ switch MtU{1}
         infoDts.Title = 'Noise corrected dataset';
         infoDts.Log   = ['PRF=', num2str(m), ' NCR=', options.method,...
             '|', infoDts.Log];
-        MZ = dtsIn.AxisY.Data;
-        extMat = zeros(size(MZ, 1), 2*MtU{2}+1);
-        for ii = 1:MtU{2}+1
+        Noise   =  obj.Datasets{dts}.AddInfo.Peak2PeakNoise;
+%         [~, partial] = decipherLog(obj.Datasets{dts}.Log);
+%         mmz = strfind(partial, 'MMZ');
+%         for ii = 1:length(mmz)+1
+%             if ~isempty(mmz{ii})
+%                 break
+%             end
+%         end
+%         mmz = ii;
+%         MMZ = obj.Datasets{mmz}.AddInfo.masterMZAxis.Data;
+%         AxisMZ              = MMZ;
+%         AxisMZ(:,4)         = 0;
+
+        S2NMat  = zeros(size(AxisMZ, 1), 2*MtU{2}+1);
+        for ii  = 1:MtU{2}+1
             Scanii  = dtsIn.ListOfScans{ii};
-            extMat(:, MtU{2}+ii) = dtsIn.xpend(Scanii).Data(:,2);
+            if ~isempty(Scanii.Data)
+                [~, loc] = ismember(Scanii.Data(:,1), Noise.Data(:,1));
+                nnMS = Scanii.Data(:,2)./Noise.Data(loc,2);
+                [~, loc] = ismember(Scanii.Data(:,1), AxisMZ(:,1));
+                S2NMat(loc, MtU{2}+ii)  =  nnMS;
+            else
+                S2NMat(:, MtU{2}+ii)  = 0;
+            end
         end
-        ZB     = zeros(MtU{3}, 2*MtU{2}+1);
-        extMat = [ZB; extMat; ZB];
+        ZB      = zeros(MtU{3}, 2*MtU{2}+1);
+        S2NMat  = [ZB; S2NMat; ZB];
         
         h = waitbar(0,'processing scans');
-        for ii = 1:size(allProfiles, 1)
-            waitbar(ii/size(allProfiles, 1))
+        for ii = 1:length(dtsIn.ListOfScans)
+            waitbar(ii/length(dtsIn.ListOfScans))
             
-            % find and remove noise
-            TM = [];
-            for jj = -MtU{3}:1:MtU{3}
-                TM = [TM, circshift(extMat, jj)]; %#ok<*AGROW>
+            switch MtU{5}
+                case 'n'
+                    % find and remove noise
+                    TM = [];
+                    for jj = -MtU{3}:1:MtU{3}
+                        TM = [TM, circshift(S2NMat, jj)]; %#ok<*AGROW>
+                    end
+                    ind2null = max(TM, [], 2) < MtU{4};
+            
+                case 'f'
+                    TM = [];
+                    for jj = -MtU{3}:1:MtU{3}
+                        TM = [TM, circshift(S2NMat(:, MtU{2}+1), [jj, 0])]; %#ok<*AGROW>
+                    end
+                    ind2null = max(TM, [], 2) < MtU{4} &  ...
+                        max(S2NMat, [], 2) < MtU{4};
             end
-            ind2null = max(TM, [], 2) < MtU{4};
             infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
+            MS2Cor    = AxisMZ(:,1);
             Scanii = dtsIn.ListOfScans{ii};
-            MS2Cor = dtsIn.xpend(Scanii).Data;
-            MS2Cor(ind2null(MtU{3}+1:end-MtU{3}), 2) = 0;
-            infoScn = Scanii.InfoTrc;
-            Log     = decipherLog(infoDts.Log, 1);
-            infoScn.FT        = Log{1};
-            infoScn.Path2Dat  = infoDts.Path2Dat{fln};
-            infoScn.Loc       = 'inFile';
-            infoScn.Precision = 'single';
-            AxisMZ(:,2)        = AxisMZ(:,2) + MS2Cor(:,2);
-            iNZ = MS2Cor(:,2) > 0;
-            AxisMZ(iNZ, 3)     = AxisMZ(iNZ, 3) + 1;
-            AxisMZ(:,4)        = max([AxisMZ(:,4), MS2Cor(:,2)], [], 2);
-            allProfiles(ii,2) = sum(MS2Cor(:,2));
-            allProfiles(ii,3) = max(MS2Cor(:,2));
+            
+            if ~isempty(Scanii.Data)
+                [~, loc] = ismember(Scanii.Data(:,1), MS2Cor(:,1));
+                MS2Cor(loc, 2) = Scanii.Data(:,2);
+                MS2Cor(ind2null(MtU{3}+1:end-MtU{3}), 2) = 0;
+            else
+                MS2Cor(:,2) = 0;
+            end
             
             % find and remove spikes
             if options.RemSpks
@@ -150,26 +175,44 @@ switch MtU{1}
                 MS2Cor = spikesRemoval(MS2Cor, spkSz );
             end
             
+            infoScn           = Scanii.InfoTrc;
+            [~, partial]      = decipherLog(infoDts.Log);
+            
+            infoScn.FT        = partial{1};
+            infoScn.Path2Dat  = infoDts.Path2Dat{fln};
+            infoScn.Loc       = 'inFile';
+            infoScn.Precision = 'single';
+            AxisMZ(:,2)       = AxisMZ(:,2) + MS2Cor(:,2);
+            iNZ = MS2Cor(:,2) > 0;
+            AxisMZ(iNZ, 3)    = AxisMZ(iNZ, 3) + 1;
+            AxisMZ(:,4)       = max([AxisMZ(:,4), MS2Cor(:,2)], [], 2);
+            allProfiles(ii,2) = sum(MS2Cor(:,2));
+            allProfiles(ii,3) = max(MS2Cor(:,2));
+            
             % reduced trailing zero in excess
-            provMat      = [MS2Cor(2:end, 2); 0];
-            provMat(:,2) = MS2Cor(:, 2);
-            provMat(:,3) = [0; MS2Cor(1:end-1, 2)];
-            MS           = MS2Cor(sum(provMat, 2) > 0, :);
+            MS2Cor = trailRem(MS2Cor, 2);
             
             % recorded each scans
-            if isempty(MS)
+            if isempty(MS2Cor)
                 infoDts.ListOfScans{ii} = Trace(infoScn);
             else
-                infoDts.ListOfScans{ii} = Trace(infoScn, MS);
+                infoDts.ListOfScans{ii} = Trace(infoScn, MS2Cor);
             end
             
             % Load the  next scan
-            if ii+MtU{2}+1 > size(allProfiles, 1)
+            if ii+MtU{2}+1 > length(dtsIn.ListOfScans)
                 scan2add = zeros(size(AxisMZ, 1), 1); %#ok<*PREALL>
             else
                 scan2add = dtsIn.ListOfScans{ii+MtU{2}+1};
-                scan2add = [ZB(:,1); dtsIn.xpend(scan2add).Data(:,2); ZB(:,1)];
-                extMat   = [extMat(:, 2:end), scan2add];
+                [~, loc] = ismember(scan2add.Data(:,1), Noise.Data(:,1));
+                nnMS = scan2add.Data(:,2)./Noise.Data(loc,2);
+                
+                S2A  = AxisMZ(:,1);
+                [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
+                S2A(loc, 2) = nnMS;
+
+                scan2add = [ZB(:,1); S2A(:,2); ZB(:,1)];
+                S2NMat   = [S2NMat(:, 2:end), scan2add];
             end
             
             s = dir(infoDts.Path2Dat{fln}); 
@@ -187,18 +230,15 @@ switch MtU{1}
 end
 try close(h), catch, end
 
-
-% 3- Create the new dataset and save
-provMat      = [AxisMZ(2:end, 2); 0];
-provMat(:,2) = AxisMZ(:, 2);
-provMat(:,3) = [0; AxisMZ(1:end-1, 2)];
-AxisMZ        = AxisMZ(sum(provMat, 2) > 0, :);
-
 % creating Dataset
+% reduced trailing zero in AxisMZ to
+AxisMZ        =  trailRem(AxisMZ, 2);
+
 infoAxis           = dtsIn.AxisX.InfoAxis;
 infoAxis.Loc       = 'inFile';
 infoAxis.Precision = 'single';
 infoAxis.Path2Dat  = infoDts.Path2Dat{fln};
+
 if isempty(allProfiles)
     infoDts.AxisX  = Axis(infoAxis);
 else
@@ -223,6 +263,7 @@ infoPrf.Path2Dat  = infoDts.Path2Dat{fln};
 infoPrf.FT        = infoDts.Log;
 infoPrf.TT        = 'SEP';
 infoPrf.AdiPrm    = {};
+infoPrf.P2Fin     = obj.Path2Fin;
 
 infoPrf.Title     = 'Base Peak Profiles';
 if isempty(allProfiles)

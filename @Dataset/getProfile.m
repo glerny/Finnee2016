@@ -20,19 +20,33 @@ prof(:,2) = 0;
 
 switch obj.Format
     case 'profile'
-        indMZStt = findCloser(mzStart, AxisX);
-        indMZEnd = findCloser(mzEnd, AxisX);
-
-        h = waitbar(0,'Calculating profile, please wait');
-        for ii = 1:length(prof(:,1))
-            waitbar(ii/length(prof(:,1)))
-            XMS = xpend(obj, obj.ListOfScans{ii});
-            prof(ii,2) = sum(XMS.Data(indMZStt:indMZEnd, 2));
+        if ~isempty(AxisX)
+            indMZStt = findCloser(mzStart, AxisX);
+            indMZEnd = findCloser(mzEnd, AxisX);
+            
+            h = waitbar(0,'Calculating profile, please wait');
+            for ii = 1:length(prof(:,1))
+                waitbar(ii/length(prof(:,1)))
+                XMS = xpend(obj, obj.ListOfScans{ii});
+                prof(ii,2) = sum(XMS.Data(indMZStt:indMZEnd, 2));
+            end
+            InfoTrc.Title = ['Extracted ion Profiles from ', ...
+                num2str(AxisX(indMZStt), obj.AxisY.fo),...
+                ' to ', num2str(AxisX(indMZEnd), obj.AxisY.fo), ...
+                ' ', obj.AxisY.Unit];
+        else
+            h = waitbar(0,'Calculating profile, please wait');
+            for ii = 1:length(prof(:,1))
+                waitbar(ii/length(prof(:,1)))
+                MS = obj.ListOfScans{ii};
+                ind2Keep = MS.Data(:,1) >= mzStart & MS.Data(:,1) <= mzEnd;
+                prof(ii,2) = sum(MS.Data(ind2Keep, 2));
+            end
+            InfoTrc.Title = ['Extracted ion Profiles from ', ...
+                num2str(mzStart, obj.AxisY.fo),...
+                ' to ', num2str(mzEnd, obj.AxisY.fo), ...
+                ' ', obj.AxisY.Unit];
         end
-        InfoTrc.Title = ['Extracted ion Profiles from ', ...
-            num2str(AxisX(indMZStt), obj.AxisY.fo),...
-            ' to ', num2str(AxisX(indMZEnd), obj.AxisY.fo), ...
-            ' ', obj.AxisY.Unit];
         
     case 'centroid'
         h = waitbar(0,'Calculating profile, please wait');
@@ -47,7 +61,7 @@ switch obj.Format
                 prof(ii,2) = 0;
                 continue
             end
-                
+            
             ind2keep = MS(:,1) >= mzStart & MS(:,1) <= mzEnd;
             if any(ind2keep)
                 prof(ii,2) = sum(MS(ind2keep, 2));
@@ -59,12 +73,13 @@ end
 
 try close(h); catch, end
 InfoTrc.TT     = 'SEP';
-strLog         = decipherLog(obj.Log, 1);
-InfoTrc.FT     = strLog{1};
-InfoTrc.AxisX   = Axis(obj.AxisX.InfoAxis);
-InfoTrc.AxisY   = Axis(obj.AxisZ.InfoAxis);
+[~, partial]   = decipherLog(obj.Log);
+InfoTrc.FT     = partial{1};
+InfoTrc.AxisX  = Axis(obj.AxisX.InfoAxis);
+InfoTrc.AxisY  = Axis(obj.AxisZ.InfoAxis);
 InfoTrc.Loc    = 'inTrace';
 InfoTrc.AdiPrm = {};
+InfoTrc.P2Fin  = obj.InfoDts.P2F;
 
 s = Trace(InfoTrc, prof);
 end

@@ -1,11 +1,11 @@
 %% DESCRIPTION
 % PeakList is the class that is contain all PIP extracted from a single
 % centroid mode dataset
-% 
+%
 %% LIST OF THE CLASS'S PROPERTIES
-% 
+%
 %% LIST OF THE CLASS'S METHODS
-% 
+%
 %% Copyright
 % BSD 3-Clause License
 % Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
@@ -17,8 +17,13 @@ classdef PeakList
         BPP         % Base peak profile calculated using all the PIPs
         TIP         % Total ion profile calculated using all the PIPs
         LstPIP      % List of all the PIP
-        FOM         % summary of all FOMs    
+        FOM         % summary of all FOMs
         % #PIP|max I|time @ max I|M0|M1|M2|M3|mean(m/z)|std(m/z)|AccMass
+        Type        % 'singleton'  dtsIn is a 'centroid' dataset
+        % 'replicates' dtsIn is a array of peaklist
+        Path2Fin
+        Log2crea
+        p4norm
     end
     
     properties (Hidden)
@@ -26,73 +31,109 @@ classdef PeakList
         AxisX
         AxisY
         AxisZ
-        Path2PkL    % where to save
+        Path2Pkl    % where to save
     end
     
     methods
-        function obj = PeakList(dtsIn, ThIt, ThMZ, minPts, XLim) 
+        function obj = PeakList(dtsIn, prm1, prm2, prm3)
             % creator method will group as PIP any series of points that
-            % does not differ in their m/z by more than ThMZ. PIP will be
-            % recorded only if it contain at least minPts whith at least
-            % one points of intensity higher the ThIt.
-            if ~strcmp(dtsIn.Format, 'centroid')
-                error('dtsIn should be centroid mode')
+            % does not differ in their m/z by more than prm2. PIP will be
+            % recorded only if it contain at least prm3 whith at least
+            % one points of intensity higher the prm1.
+            if nargin == 0
+                obj.BPP      = {};
+                obj.TIP      = {};
+                obj.LstPIP   = {};
+                obj.FOM      = {};
+                obj.Type     = 'blank';
+                obj.Path2Fin = {};
+                obj.Log2crea = {};
+                obj.options  = {};
+                obj.AxisX    = {};
+                obj.AxisY    = {};
+                obj.AxisZ    = {};
+                obj.Path2Pkl = '';
+                obj.p4norm   = {};
+                
+            elseif isa(dtsIn, 'Dataset')
+                
+                if ~strcmp(dtsIn.Format, 'centroid')
+                    error('dtsIn should be centroid mode')
+                end
+                if nargin < 5
+                    prm4 = [0 inf];
+                end
+                obj.Type            = 'singleton';
+                obj.options.InfoDts = dtsIn.InfoDts;
+                obj.options.ThIt    = prm1;
+                obj.options.ThMZ    = prm2;
+                obj.options.ThBk    = 1;
+                obj.options.minPts  = prm3;
+                obj.options.XLim    = prm4;
+                obj.Path2Fin{1}     = dtsIn.Path2Fin;
+                obj.Log2crea{1}     = dtsIn.Log;
+                obj.p4norm          = {};
+                
+                InfoAxis     = dtsIn.AxisX.InfoAxis;
+                InfoAxis.Loc = 'inAxis';
+                obj.AxisX{1} = Axis(InfoAxis, dtsIn.AxisX.Data);
+                obj.AxisY{1} = Axis(dtsIn.AxisY.InfoAxis);
+                obj.AxisZ{1} = Axis(dtsIn.AxisZ.InfoAxis);
+                [obj.Path2Pkl, ~, ~] = fileparts(dtsIn.InfoDts.Path2Dat{1});
+                
+                LoPts = [];
+                X      = obj.AxisX{1}.Data;
+                IdS    = find(X >= prm4(1), 1, 'first');
+                IdE    = find(X <= prm4(2), 1, 'last');
+                
+                for ii = IdS:IdE
+                    MS      = dtsIn.ListOfScans{ii}.Data;
+                    MS(:,3) = ii;
+                    LoPts   = [LoPts ; MS];
+                end
+                LoPts(LoPts(:,1) == 0, :) = [];
+                obj.LstPIP{1}    = getPIP(LoPts, prm2, prm1, prm3, X, obj.options.InfoDts);
+                obj.FOM{1}.Headings = {'Id', 'IntMax', 'Tm@IM', 'M0', 'M1',...
+                    'M2', 'M3', 'mean(m/z)', 'std(m/z)', 'Acc. Mass'};
+                
+                BPP      = obj.AxisX{1}.Data;
+                BPP(:,2) = 0;
+                TIP      = obj.AxisX{1}.Data;
+                TIP(:,2) = 0;
+                
+                for ii = 1:length(obj.LstPIP{1} )
+                    obj.FOM{1}.Data(ii, :) = [ii, obj.LstPIP{1}{ii}.FOM];
+                    IdS = obj.LstPIP{1}{ii}.IdS;
+                    y   = obj.LstPIP{1}{ii}.y;
+                    IdE = IdS + size(y, 1) - 1;
+                    
+                     % Calculating BPP & TIP
+                     TIP(IdS:IdE, 2) = TIP(IdS:IdE, 2) + y;
+                     BPP(IdS:IdE, 2) = max(BPP(IdS:IdE, 2), y);  
+                end
+               
+                InfoTrc      = dtsIn.BPP.InfoTrc;
+                InfoTrc.Loc  = 'inTrace';
+                obj.BPP{1}   = Trace(InfoTrc, BPP);
+                InfoTrc      = dtsIn.TIP.InfoTrc;
+                InfoTrc.Loc  = 'inTrace';
+                obj.TIP{1}   = Trace(InfoTrc, TIP);
+                
+                myPeakList = obj; %#ok<*NASGU>
+                save(fullfile(obj.Path2Pkl, 'myPeakList.mat'), 'myPeakList')
+                
+            else
+                error('dtsIn not recognised')
             end
-            if nargin < 5
-                XLim = [0 inf];
-            end
-            
-            obj.options.InfoDts = dtsIn.InfoDts;
-            obj.options.ThIt    = ThIt;
-            obj.options.ThMZ    = ThMZ;
-            obj.options.ThBk    = 1;
-            obj.options.minPts  = minPts;
-            obj.options.XLim    = XLim;
-            
-            InfoAxis     = dtsIn.AxisX.InfoAxis;
-            InfoAxis.Loc = 'inAxis';
-            obj.AxisX    = Axis(InfoAxis, dtsIn.AxisX.Data);
-            obj.AxisY    = Axis(dtsIn.AxisY.InfoAxis);
-            obj.AxisZ    = Axis(dtsIn.AxisZ.InfoAxis);
-            InfoTrc      = dtsIn.BPP.InfoTrc;
-            InfoTrc.Loc  = 'inTrace';
-            obj.BPP      = Trace(InfoTrc, dtsIn.BPP.Data);
-            InfoTrc      = dtsIn.TIP.InfoTrc;
-            InfoTrc.Loc  = 'inTrace';
-            obj.TIP      = Trace(InfoTrc, dtsIn.TIP.Data);
-            [obj.Path2PkL, ~, ~] = fileparts(dtsIn.InfoDts.Path2Dat{1});
-
-            LoPts = [];
-            X      = obj.AxisX.Data;
-            IdS    = find(X >= XLim(1), 1, 'first');
-            IdE    = find(X <= XLim(2), 1, 'last');
-            X      = X(IdS:IdE);
-            
-            for ii = IdS:IdE
-                MS      = dtsIn.ListOfScans{ii}.Data;
-                MS(:,3) = ii;
-                LoPts   = [LoPts ; MS];
-            end
-            LoPts(LoPts(:,1) == 0, :) = [];
-            obj.LstPIP       = getPIP(LoPts, ThMZ, ThIt, minPts, X, obj.options.InfoDts);
-            obj.FOM.Headings = {'Id', 'IntMax', 'Tm@IM', 'M0', 'M1',...
-                'M2', 'M3', 'mean(m/z)', 'std(m/z)', 'Acc. Mass'};
-            for ii = 1:length(obj.LstPIP)
-                obj.FOM.Data(ii, :) = [ii, obj.LstPIP{ii}.FOM];
-            end
-            myPeakList = obj; %#ok<*NASGU>
-            save(fullfile(obj.Path2PkL, 'myPeakList.mat'), 'myPeakList')
             
         end
         
-         function save(obj)
+        function save(obj)
             %% DESCRIPTION
             myPeakList = obj; %#ok<*NASGU>
             save(fullfile(obj.Path2PkL, 'myPeakList.mat'), 'myPeakList')
- 
         end
         
-       
     end
 end
 

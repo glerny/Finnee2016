@@ -8,7 +8,7 @@ for ii = 1:length(FstCut)-1
     SndCut = [1; find(diff(LFC(:,3)) > 1)+1; size(LFC,1)+1];
     for jj = 1:length(SndCut) -1
         cPIP    = LFC(SndCut(jj):SndCut(jj+1)-1, :);
-        if size(cPIP, 1) >= minPts && max(cPIP(:,2)) >= ThrIt
+        if size(unique(cPIP(:,3)), 1) >= minPts && max(cPIP(:,2)) >= ThrIt
             cPIP       = sortrows(cPIP, 1);
             ttd        = find(diff(cPIP(:,1)) > ThrMZ)+1;
             if ~isempty(ttd)

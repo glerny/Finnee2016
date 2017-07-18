@@ -41,23 +41,29 @@ options          = checkVarargin(infoDts, varargin{:});
 
 % 2- Selection of m/z values 
 FIS = dtsIn.FIS.Data(:,2) / size(dtsIn.AxisX.Data, 1)*100;
-f1 = figure;
-[N,edges] = histcounts(FIS ,1:1:100);
-bar(edges, [0, N]);
-axis([0 100 0 inf])
-hPlot = gcf;
-title('Frequency profile');
-h = msgbox('Select the frequency threshold for profile to be corrected', 'Correct','modal');
-uiwait(h)
-figure(hPlot);
-[fmax, ~] = ginput(1);
-if isempty(fmax)
-    return
-end
-fmax = inputdlg('Confirm the value', 'Correct', 1, {num2str(fmax)});
-IndMax = FIS >= str2double(fmax{1});
-try close(f1), catch, end
+bool = false;
 
+if isempty(options.FqThres)
+    bool = true;
+    f1 = figure;
+    [N,edges] = histcounts(FIS ,1:1:100);
+    bar(edges, [0, N]);
+    axis([0 100 0 inf])
+    hPlot = gcf;
+    title('Frequency profile');
+    h = msgbox('Select the frequency threshold for profile to be corrected', 'Correct','modal');
+    uiwait(h)
+    figure(hPlot);
+    [fmax, ~] = ginput(1);
+    if isempty(fmax)
+        return
+    end
+    fmax = inputdlg('Confirm the value', 'Correct', 1, {num2str(fmax)});
+    options.FqThres = str2double(fmax{1});
+    try close(f1), catch, end
+end
+
+IndMax = FIS >= options.FqThres;
 h = waitbar(0, 'Generating matrix of profiles');
 profile(:,1) = dtsIn.AxisX.Data;
 
@@ -73,68 +79,48 @@ for ii = 1:length(profile(:,1))
 end
 try close(h), catch, end
 
-f2 = figure('Name', 'Selected Profiles for Baseline Corrections');
-subplot(2, 1, 1)
-plot(profile(:,1), profile(:,3));
-title(['Selected profiles for correction (max plot): ', num2str(sum(IndMax))])
-ylabel([dtsIn.AxisZ.Label, ' / ',  dtsIn.AxisZ.Unit]);
-subplot(2, 1, 2)
-plot(profile(:,1), profile(:,5));
-title(['Non-selected profiles (max plot): ', num2str(sum(~IndMax))])
-xlabel([dtsIn.AxisX.Label, ' / ', dtsIn.AxisX.Unit]);
-ylabel([dtsIn.AxisZ.Label, ' / ', dtsIn.AxisZ.Unit]);
-uicontrol('Position',[20 20 200 40],'String','Continue',...
-    'Callback','uiresume(gcbf)');
-uiwait(gcf);
-button = questdlg('Are you happy with those conditions?');
-if ~strcmp(button, 'Yes')
-    return
-end
+if bool
+    f2 = figure('Name', 'Selected Profiles for Baseline Corrections');
+    subplot(2, 1, 1)
+    plot(profile(:,1), profile(:,3));
+    title(['Selected profiles for correction (max plot): ', num2str(sum(IndMax))])
+    ylabel([dtsIn.AxisZ.Label, ' / ',  dtsIn.AxisZ.Unit]);
+    subplot(2, 1, 2)
+    plot(profile(:,1), profile(:,5));
+    title(['Non-selected profiles (max plot): ', num2str(sum(~IndMax))])
+    xlabel([dtsIn.AxisX.Label, ' / ', dtsIn.AxisX.Unit]);
+    ylabel([dtsIn.AxisZ.Label, ' / ', dtsIn.AxisZ.Unit]);
+    uicontrol('Position',[20 20 200 40],'String','Continue',...
+        'Callback','uiresume(gcbf)');
+    uiwait(gcf);
+    button = questdlg('Are you happy with those conditions?');
+    if ~strcmp(button, 'Yes')
+        return
+    end
 
-try close(f2), catch, end
+    try close(f2), catch, end
+end
 
 % 4- Trim the time axis for a more accurate baseline correction
-f = figure;
-plotyy(profile(:,1), profile(:,3), profile(:,1), profile(:,5));
-title('');
-xlabel([dtsIn.AxisX.Label, ' / ', dtsIn.AxisX.Unit]);
-ylabel([dtsIn.AxisZ.Label, ' / ', dtsIn.AxisZ.Unit]);
-legend({'Sum of profiles to be corrected'; 'Sum of remaining profiles'});
-uicontrol('Position',[20 20 200 40],'String','Continue',...
-    'Callback','uiresume(gcbf)');
-uiwait(gcf);
-h = msgbox('Select the starting time', '','modal');
-uiwait(h)
-figure(f);
-[TmS, ~] = ginput(1);
-if isempty(TmS)
-    return
+if isempty(options.XLim)
+    options.XLim(1) = 1;
+    options.XLim(2) = length(dtsIn.AxisX.Data);
 end
-TmS = inputdlg('Confirm the value', 'Correct', 1, {num2str(TmS)});
-h = msgbox('Select the ending time', '','modal');
-uiwait(h)
-figure(f);
-[TmE, ~] = ginput(1);
-if isempty(TmE)
-    return
-end
-TmE = inputdlg('Confirm the value', 'Correct', 1, {num2str(TmE)});
-XLim(1) = min(str2double(TmS), str2double(TmE));
-XLim(2) = max(str2double(TmS), str2double(TmE));
-try close(f), catch, end
 
 % 5- Select the baseline method
-warning('off') %#ok<*WNOFF>
-[method, ExitFlag] = gui4basCor( dtsIn.AxisX, dtsIn.AxisZ, matRes, XLim);
-if ExitFlag == -1
-    return
+if isempty(options.baseline)
+     warning('off') %#ok<*WNOFF>
+     [options.baseline, ExitFlag] = gui4basCor( dtsIn.AxisX, dtsIn.AxisZ, matRes, options.XLim);
+     if ExitFlag == -1
+         return
+     end
+     warning('on') %#ok<*WNON>
 end
-warning('on') %#ok<*WNON>
 
 % 6- corecting the profiles
 corProf = zeros(size(matRes));
 h = waitbar(0,'Correcting profiles');
-ind2keep = dtsIn.AxisX.Data >= XLim(1) & dtsIn.AxisX.Data <= XLim(2);
+ind2keep = dtsIn.AxisX.Data >= options.XLim(1) & dtsIn.AxisX.Data <= options.XLim(2);
 infoTrc.Title  = '';
 infoTrc.FT     = '';
 infoTrc.TT     = 'PRF';
@@ -142,23 +128,41 @@ infoTrc.AxisX   = Axis(dtsIn.AxisX.InfoAxis);
 infoTrc.AxisY   = Axis(dtsIn.AxisX.InfoAxis);
 infoTrc.Loc    = 'inTrace';
 infoTrc.AdiPrm = {};
+infoTrc.P2Fin = '';
 
 for ii = 1:size(corProf, 1)
     waitbar(ii/size(corProf, 1))
     
     prf      = dtsIn.AxisX.Data(ind2keep);
     prf(:,2) = matRes(ii, ind2keep);
-    trc      = Trace(infoTrc, prf);
-    myAT = AnalyzeThis(trc, ...
-        'BaseMethod'  , method,...
-        'SmoothMethod', 'None',                       ...
-        'PeakPicking' , 'None',                       ...
-        'Func4Deconv' , 'None');
-    Yc         = round(trc.Data(:,2)- myAT.Baseline.vals);
-    Yc(Yc < 0) = 0;
+    MtU = strsplit(options.baseline, ':');
+    IdnZeros = prf(:,2) > 0;
+    switch MtU{1}
+        case 'PF'
+            n = str2double(MtU{2});
+            [z, bslPts] = doPF(prf(IdnZeros, :), n);
+            
+        case 'ArPLS'
+            lambda = str2double(MtU{2});
+            ratio = str2double(MtU{2}); 
+            [z, bslPts] = doArPLS(prf(IdnZeros, 2), lambda, ratio);
+            
+        case 'ArPLS2'
+            lambda = str2double(MtU{2});
+            [z, bslPts] = doArPLS2(prf(IdnZeros, 2), lambda);
+    end
+    
+    provPrf      = prf(IdnZeros, 2);
+    noise(ii)    = 2*1.96*std(provPrf(bslPts) - z(bslPts));
+    Yc           = prf(:,2);
+    Yc(IdnZeros) = Yc(IdnZeros) - z + noise(ii)/2;
+    
+    Yc                    = round(Yc);
+    Yc(Yc < 0)            = 0;
     corProf(ii, ind2keep) = Yc;
 end
 try close(h), catch, end
+
 
 %% 7. Recording new dataset and saving
 infoDts          = dtsIn.InfoDts;
@@ -168,16 +172,26 @@ infoDts.Path2Dat = {};
 [~, rndStr]         = fileparts(tempname);
 allProfiles(:,1)    = dtsIn.AxisX.Data;
 allProfiles(:,3)    = 0;
+nnAllProfiles(:,1)  = dtsIn.AxisX.Data;
+nnAllProfiles(:,3)  = 0;
 infoDts.ListOfScans = {};
-AxisMZ               = dtsIn.AxisY.Data;
-AxisMZ(:,4)          = 0;
+AxisMZ              = dtsIn.AxisY.Data;
+AxisMZ(:,4)         = 0;
 fln                 = 1;
 m                   = length(obj.Datasets)+1;
+P2PNoise            = dtsIn.AxisY.Data;
+P2PNoise(IndMax,2)  = noise;
+noise               = sort(noise);
+minNoise            = mean(noise(1:round(0.1*length(noise))));
+P2PNoise(P2PNoise(:,2) < minNoise ,2)  = minNoise;
 
 
 infoDts.Title = 'Baseline corrected dataset';
-infoDts.Log   = ['PRF=', num2str(m), ' BCR=', method,...
-    '|', infoDts.Log];
+log2add       = ['PRF=', num2str(m), ' BCR=', options.baseline];
+
+if options.RemSpks
+    log2add = [log2add, ' SPR=', num2str(options.SpkSz)];
+end
 
 h = waitbar(0,'processing scans');
 for ii = 1:size(allProfiles, 1)
@@ -187,31 +201,38 @@ for ii = 1:size(allProfiles, 1)
     Scanii            = dtsIn.xpend(dtsIn.ListOfScans{ii});
     XMS               = Scanii.Data;
     XMS(IndMax,2)     = corProf(:, ii);
+    
+    % find and remove spikes
+    if options.RemSpks
+        spkSz  = options.SpkSz;
+        XMS = spikesRemoval(XMS, spkSz );
+    end
+    
     infoScn           = Scanii.InfoTrc;
-    Log               = decipherLog(infoDts.Log, 1);
-    infoScn.FT        = Log{1};
+    infoScn.FT        = log2add;
     infoScn.Loc       = 'inFile';
     infoScn.Precision = 'single';
     infoScn.Title     = ['Profile scan #', num2str(ii)];
     infoScn.Path2Dat  = infoDts.Path2Dat{fln};
-    AxisMZ(:,2)        = AxisMZ(:,2) + XMS(:,2);
+    AxisMZ(:,2)       = AxisMZ(:,2) + XMS(:,2);
     iNZ               = XMS(:,2) > 0;
-    AxisMZ(iNZ, 3)     = AxisMZ(iNZ, 3) + 1;
-    AxisMZ(:,4)        = max([AxisMZ(:,4), XMS(:,2)], [], 2);
+    AxisMZ(iNZ, 3)    = AxisMZ(iNZ, 3) + 1;
+    AxisMZ(:,4)       = max([AxisMZ(:,4), XMS(:,2)], [], 2);
     allProfiles(ii,2) = sum(XMS(:,2));
     allProfiles(ii,3) = max(XMS(:,2));
     
+    nnXMS             = XMS(:,2)./P2PNoise(: ,2);
+    nnAllProfiles(ii,2) = sum(nnXMS);
+    nnAllProfiles(ii,3) = max(nnXMS);
+    
     % reduced trailing zero in excess
-    provMat      = [XMS(2:end, 2); 0];
-    provMat(:,2) = XMS(:, 2);
-    provMat(:,3) = [0; XMS(1:end-1, 2)];
-    MS           = XMS(sum(provMat, 2) > 0, :);
+    XMS = trailRem(XMS, 2);
     
     % recorded each scans
-    if isempty(MS)
+    if isempty(XMS)
         infoDts.ListOfScans{ii} = Trace(infoScn);
     else
-        infoDts.ListOfScans{ii} = Trace(infoScn, MS);
+        infoDts.ListOfScans{ii} = Trace(infoScn, XMS);
     end
     
     s = dir(infoDts.Path2Dat{fln});
@@ -224,19 +245,13 @@ end
 
 try close(h), catch, end
 
-% reduced trailing zero in AxisMZ to
-provMat      = [AxisMZ(2:end, 2); 0];
-        infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
-        infoScn.Path2Dat      = infoDts.Path2Dat{fln};
-provMat(:,2) = AxisMZ(:, 2);
-provMat(:,3) = [0; AxisMZ(1:end-1, 2)];
-AxisMZ        = AxisMZ(sum(provMat, 2) > 0, :);
-
 % creating Dataset
 infoAxis           = dtsIn.AxisX.InfoAxis;
 infoAxis.Loc       = 'inFile';
 infoAxis.Precision = 'single';
 infoAxis.Path2Dat  = infoDts.Path2Dat{fln};
+AxisMZ             =  trailRem(AxisMZ, 2);
+
 if isempty(allProfiles)
     infoDts.AxisX  = Axis(infoAxis);
 else
@@ -253,11 +268,13 @@ else
     infoDts.AxisY  = Axis(infoAxis, AxisMZ(:,1));
 end
 
+infoDts.Log = [log2add, '|', infoDts.Log];
 infoPrf.AxisX      = Axis(dtsIn.AxisX.InfoAxis);
 infoPrf.AxisY      = Axis(dtsIn.AxisZ.InfoAxis);
 infoPrf.Loc       = 'inFile';
 infoPrf.Precision = 'single';
 infoPrf.Path2Dat  = infoDts.Path2Dat{fln};
+infoPrf.P2Fin     = obj.Path2Fin;
 infoPrf.FT        = infoDts.Log;
 infoPrf.TT        = 'SEP';
 infoPrf.AdiPrm    = {};
@@ -269,11 +286,25 @@ else
     infoDts.BPP   = Trace(infoPrf, [allProfiles(:,1), allProfiles(:,3)]);
 end
 
+infoPrf.Title     = 'Noise normalized base Peak Profiles';
+if isempty(nnAllProfiles)
+    nnBPP   = Trace(infoPrf);
+else
+    nnBPP   = Trace(infoPrf, [nnAllProfiles(:,1), nnAllProfiles(:,3)]);
+end
+
 infoPrf.Title     = 'Total Ion profiles';
 if isempty(allProfiles)
     infoDts.TIP   = Trace(infoPrf);
 else
     infoDts.TIP   = Trace(infoPrf, [allProfiles(:,1), allProfiles(:,2)]);
+end
+
+infoPrf.Title     = 'Noise normalized total Ion profiles';
+if isempty(allProfiles)
+    nnTIP   = Trace(infoPrf);
+else
+    nnTIP   = Trace(infoPrf, [nnAllProfiles(:,1), nnAllProfiles(:,2)]);
 end
 
 infoPrf.AxisX      = Axis(dtsIn.AxisY.InfoAxis);
@@ -298,11 +329,18 @@ else
     infoDts.BIS   = Trace(infoPrf, [AxisMZ(:,1), AxisMZ(:,4)]);
 end
 
+% record the noise profile
+infoPrf.Title     = 'Peak to peak noise';
+Peak2PeakNoise    = Trace(infoPrf, P2PNoise);
+
 infoDts.LAST      = Trace();
 
 infoDts.Option4crt.function = 'filterDataset';
 infoDts.Option4crt.Options  = options;
 obj.Datasets{end+1}         = Dataset(infoDts);
+obj.Datasets{end}.AddInfo.Peak2PeakNoise = Peak2PeakNoise;
+obj.Datasets{end}.AddInfo.nnBPP          = nnBPP;
+obj.Datasets{end}.AddInfo.nnTIP          = nnTIP;
 obj.save;
 
     %% SUB FUNCTIONS
@@ -320,10 +358,13 @@ obj.save;
         end
         
         % 2- Default parameters
-        options.RemSpks = true;
-        options.SpkSz   = 2;
-        options.XLim    = [0 inf];
-        
+        options.RemSpks  = true;
+        options.SpkSz    = 2;
+        options.XLim     = [];
+        options.FqThres  = []; 
+        options.baseline = {};
+        options.RemNoise = false;
+
         % 3- Decipher varargin
         input = @(x) find(strcmpi(varargin,x),1);
         tgtIx = input('spikes');
@@ -343,6 +384,16 @@ obj.save;
             options.XLim(1) = min(XmM);
             options.XLim(2) = max(XmM);
             
+        end
+        
+        tgtIx = input('Frequency');
+        if ~isempty(tgtIx)
+            options.FqThres = varargin{tgtIx +1};
+        end
+        
+        tgtIx = input('Baseline');
+        if ~isempty(tgtIx)
+            options.baseline = varargin{tgtIx +1};
         end
     end
 end

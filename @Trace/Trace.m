@@ -27,6 +27,7 @@ classdef Trace
         % OTR - Other
         AxisX        % Information about AxisX (label, unit precision)
         AxisY        % Information about AxisY (label, unit precision)
+        Path2Fin     % Link to the Finnee folder
         
     end
     
@@ -65,10 +66,11 @@ classdef Trace
                 obj.Title       = '';
                 obj.FigureTitle = '';
                 obj.TraceType   = '';
-                obj.AxisX        = Axis ;
-                obj.AxisY        = Axis;
+                obj.AxisX       = Axis;
+                obj.AxisY       = Axis;
+                obj.Path2Fin    = '';
                 obj.DataStorage = 'None';
-                obj.AdiParam     = {};
+                obj.AdiParam    = {};
                 obj.Precision   = '';
                 obj.Path2Dat    = '';
                 obj.Index       = [0 0];
@@ -80,6 +82,7 @@ classdef Trace
                 obj.TraceType   = infoTrc.TT;
                 obj.AxisX       = infoTrc.AxisX;
                 obj.AxisY       = infoTrc.AxisY;
+                obj.Path2Fin    = infoTrc.P2Fin;
                 obj.DataStorage = infoTrc.Loc;
                 obj.AdiParam    = infoTrc.AdiPrm;
                 
@@ -178,8 +181,9 @@ classdef Trace
             InfoTrc.Title     = obj.Title;
             InfoTrc.FT        = obj.FigureTitle;
             InfoTrc.TT        = obj.TraceType;
-            InfoTrc.AxisX      = obj.AxisX;
-            InfoTrc.AxisY      = obj.AxisY;
+            InfoTrc.AxisX     = obj.AxisX;
+            InfoTrc.AxisY     = obj.AxisY;
+            InfoTrc.P2Fin     = obj.Path2Fin;
             InfoTrc.Loc       = obj.DataStorage;
             InfoTrc.AdiPrm    = obj.AdiParam;
             InfoTrc.Precision = obj.Precision;

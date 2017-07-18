@@ -280,12 +280,14 @@ end
         
         ind2keep = prf(:,1) >= XLim(1) & prf(:,1) <= XLim(2);
         infoTrc.Title = '';
-        infoTrc.FT = '';
-        infoTrc.TT = 'PRF';
-        infoTrc.AxisX = Axis(AxisX.InfoAxis);
-        infoTrc.AxisY = Axis(AxisZ.InfoAxis);
-        infoTrc.Loc = 'inTrace';
+        
+        infoTrc.FT     = '';
+        infoTrc.TT     = 'PRF';
+        infoTrc.AxisX  = Axis(AxisX.InfoAxis);
+        infoTrc.AxisY  = Axis(AxisZ.InfoAxis);
+        infoTrc.Loc    = 'inTrace';
         infoTrc.AdiPrm = {};
+        infoTrc.P2Fin  = '';
         trc = Trace(infoTrc, prf(ind2keep,:));
     end
 
