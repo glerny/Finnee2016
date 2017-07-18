@@ -1,3 +1,6 @@
+# @18/07/2017
+The new version of Finnee differs from the previous one. I did not have the time to modify the wiki but the quickstart_2 document will guide you through the first steps. I will update the wiki as fast as I can.
+
 # Introduction  
 Finnee2016 is a Matlab toolbox that was specifically designed to analyse analytical separation techniques hyphenated with high-resolution mass spectrometry (X-HRMS). Finnee2016 is not a software, it is a collection of classes and functions that allow recovering MS scans from mzML files and performed transformation (baseline drift correction, peak picking, centroid algorithms…), As a toolbox Finnee2016 cannot be used without a Matlab working. Finnee2016 has been designed with Matlab2016a, but most of the functions also work with older versions. While a basic knowledge of Matlab is needed, Finnee2016 has been designed as to allow to use it without programming skills. Operations are run by entering the correct line in Matlab command panel.
 
