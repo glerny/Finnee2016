@@ -72,7 +72,7 @@ if options.MstAxis
     MZlim(1) = min( str2double(M4MA{1}), str2double(M4MA{2}));
     MZlim(2) = max( str2double(M4MA{1}), str2double(M4MA{2}));
     
-    newAxis = dtsIn.ListOfScans{Id4MA}.extrapolMZ(3, MZlim);
+    newAxis = dtsIn.ListOfScans{Id4MA}.extrapolMZ(2, MZlim);
 end
 
 % Initiation of profiles
@@ -104,8 +104,17 @@ for ii = 1:length(dtsIn.AxisX.Data)
     
     
     XMS = newAxis;
-    XMS(:,2) =  interp1(Scanii.Data(Id2Keep,1), Scanii.Data(Id2Keep,2), XMS(:,1),...
+    XY  = Scanii.Data(Id2Keep, :);
+    [~, ia, ~] = unique(XY(:,1));
+    XY  = XY(ia, :);
+    
+    try
+    XMS(:,2) =  interp1(XY(:,1), XY(:,2), XMS(:,1),...
         options.mth4interp1);
+    catch
+        [C, ia, ic] = unique(Scanii.Data(Id2Keep,1));
+        disp('wtf')
+    end
     XMS(isnan(XMS(:,2)), 2) = 0;
     XMS(:,2) = round(XMS(:,2));
     XMS(XMS(:,2) <0, 2) = 0;
