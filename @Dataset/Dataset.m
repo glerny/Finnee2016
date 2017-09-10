@@ -44,9 +44,6 @@ classdef Dataset
     
     properties
         Title          % Title for dataset      
-    end
-    
-    properties (SetAccess = immutable) 
         Log            % Log of transformation
         DateOfCreation % Date of creation
         Format         % Format (i.e. 'centroid' or 'profile')
@@ -57,17 +54,14 @@ classdef Dataset
         BIS            % Base ions spectrum
         LAST           % blank trace
         ListOfScans    % List of scans that make the dataset
-    end
-    
-    properties (Hidden = true) 
         Option4crt     % How the dataset was created
         Path2Dat       % Link to the binary data files
-        AxisX           % Axis time
-        AxisY           % Axis m/z
-        AxisZ           % Axis intensity
+        AxisX          % Axis time
+        AxisY          % Axis m/z
+        AxisZ          % Axis intensity
+        MZlim
         Path2Fin
         AddInfo = {};
-	
     end
     
      properties (Dependent)
@@ -96,6 +90,7 @@ classdef Dataset
                 obj.AxisY       = Axis;
                 obj.AxisZ       = Axis;
                 obj.Path2Fin    = ''; 
+                obj.MZlim       = [inf 0];
                 
             elseif nargin == 1
                 obj.Title       = infoDts.Title;
@@ -114,6 +109,7 @@ classdef Dataset
                 obj.AxisY       = infoDts.AxisY;
                 obj.AxisZ       = infoDts.AxisZ;
         		obj.Path2Fin    = infoDts.P2F; 
+                obj.MZlim       = infoDts.MZlim;
             end
         end
         
@@ -134,6 +130,7 @@ classdef Dataset
                 infoDts.AxisY          = Axis(obj.AxisY.InfoAxis);
                 infoDts.AxisZ          = Axis(obj.AxisZ.InfoAxis);
                 infoDts.P2F            = obj.Path2Fin;
+                infoDts.MZlim          = obj.MZlim;
         end
         
         function XMS = xpend(obj, MS)

@@ -75,15 +75,9 @@ classdef Finnee
         DateOfCreation % The date of creation
         FileIn         % Name and path of the original mzML file
         Datasets       % The array of datasets linked to this object
-    end
-    
-    properties (Hidden = true, SetAccess = immutable)
         Options        % The options that were used by the constructor
                        % method
         Path2Fin       % The paths to the .fin folder
-    end
-    
-    properties (Hidden = true)
         MZMLDump       % Some general information from the mzML file
     end
     
@@ -286,6 +280,7 @@ classdef Finnee
                 
                 % 1- Initialisations
                 % Open and check the mzML file
+                
                 fidRead = fopen(obj.FileIn, 'r'); % original mzML file
                 if fidRead == -1 && fidWriteDat == -1
                     error('myApp:argChk', ...
@@ -393,6 +388,7 @@ classdef Finnee
                 AxisMZ              = [];
                 count               = 1;
                 fln                 = 1;
+                MZlim               = [inf 0];
                 
                 h = waitbar(0,'processing scans');
                 while count <= scanCount
@@ -514,6 +510,12 @@ classdef Finnee
                                         infoDts.ListOfScans{end+1} = Trace(infoScn);
                                     else
                                         infoDts.ListOfScans{end+1} = Trace(infoScn, MS);
+                                        if min(MS(:,1)) == 0
+                                            disp('wtf')
+                                        end 
+                                        MZlim(1) = min(MZlim(1), min(MS(:,1)));
+                                        MZlim(2) = max(MZlim(2), max(MS(:,1)));
+                                        
                                     end
                                     
                                     s = dir(infoDts.Path2Dat{fln});
@@ -550,6 +552,12 @@ classdef Finnee
                                         infoDts.ListOfScans{end+1} = Trace(infoScn);
                                     else
                                         infoDts.ListOfScans{end+1} = Trace(infoScn, MS);
+                                        if min(MS(:,1)) == 0
+                                            disp('wtf')
+                                        end 
+                                        MZlim(1) = min(MZlim(1), min(MS(:,1)));
+                                        MZlim(2) = maz(MZlim(2), max(MS(:,1)));
+                                        
                                     end
                                     
                                     s = dir(infoDts.Path2Dat{fln});
@@ -670,7 +678,9 @@ classdef Finnee
                 % save and go
                 infoDts.Option4crt.function = 'domzML2Finnee.m';
                 infoDts.P2F        = obj.Path2Fin;
+                infoDts.MZlim      = MZlim;
                 obj.Datasets{end+1}= Dataset(infoDts);
+
             end
         end
         

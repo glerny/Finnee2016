@@ -261,7 +261,7 @@ obj.save;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% CHECKVARARGIN
-    function options = checkVarargin(infoDts, ~, varargin)
+    function options = checkVarargin(infoDts, newAxis, varargin)
         % CHECKVARARGIN is used to check the input paramters
         % and create the options parameter.
         
@@ -297,6 +297,12 @@ obj.save;
                 options.RemSpks = true;
                 options.SpkSz  =  spks;
             end
+        end
+        
+        if isempty(newAxis)
+            options.MstAxis      = true;
+            options.mth4mstAxis  =  [num2str(infoDts.MZlim(1)), ':', ...
+              num2str(infoDts.MZlim(2)), ':max'] ;
         end
         
         tgtIx = input('masterAxis');
