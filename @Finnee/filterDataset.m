@@ -1,14 +1,14 @@
 %% DESCRIPTION
-% the FILTERDATASET method is used to filter a dataset using a particular 
+% the FILTERDATASET method is used to filter a dataset using a particular
 % method and create a new dataset with the filtered scans. FILTERDATASET is
 % used in particular to remove the spikes or the background noise. For more
-% information see 
+% information see
 % <https://github.com/glerny/Finnee2016/wiki/Basic-operation-with-Dataset>
-%  
+%
 %% INPUT PARAMETERS
-% *Compulsory 
-%   _obj_     : The Finnee object 
-%   _dts_     : The indices to the dataset to correct 
+% *Compulsory
+%   _obj_     : The Finnee object
+%   _dts_     : The indices to the dataset to correct
 %       (i.e. myFinnee.Datasets{dts}
 %   _method_  : The method to implement in the format
 %   'methodName:param1:param2:...:paramn'
@@ -109,18 +109,18 @@ switch MtU{1}
         infoDts.Log   = ['PRF=', num2str(m), ' NCR=', options.method,...
             '|', infoDts.Log];
         Noise   =  obj.Datasets{dts}.AddInfo.Peak2PeakNoise;
-%         [~, partial] = decipherLog(obj.Datasets{dts}.Log);
-%         mmz = strfind(partial, 'MMZ');
-%         for ii = 1:length(mmz)+1
-%             if ~isempty(mmz{ii})
-%                 break
-%             end
-%         end
-%         mmz = ii;
-%         MMZ = obj.Datasets{mmz}.AddInfo.masterMZAxis.Data;
-%         AxisMZ              = MMZ;
-%         AxisMZ(:,4)         = 0;
-
+        %         [~, partial] = decipherLog(obj.Datasets{dts}.Log);
+        %         mmz = strfind(partial, 'MMZ');
+        %         for ii = 1:length(mmz)+1
+        %             if ~isempty(mmz{ii})
+        %                 break
+        %             end
+        %         end
+        %         mmz = ii;
+        %         MMZ = obj.Datasets{mmz}.AddInfo.masterMZAxis.Data;
+        %         AxisMZ              = MMZ;
+        %         AxisMZ(:,4)         = 0;
+        
         S2NMat  = zeros(size(AxisMZ, 1), 2*MtU{2}+1);
         for ii  = 1:MtU{2}+1
             Scanii  = dtsIn.ListOfScans{ii};
@@ -148,7 +148,7 @@ switch MtU{1}
                         TM = [TM, circshift(S2NMat, jj)]; %#ok<*AGROW>
                     end
                     ind2null = max(TM, [], 2) < MtU{4};
-            
+                    
                 case 'f'
                     TM = [];
                     for jj = -MtU{3}:1:MtU{3}
@@ -204,19 +204,22 @@ switch MtU{1}
                 scan2add = zeros(size(AxisMZ, 1), 1); %#ok<*PREALL>
             else
                 scan2add = dtsIn.ListOfScans{ii+MtU{2}+1};
-                [~, loc] = ismember(scan2add.Data(:,1), Noise.Data(:,1));
-                nnMS = scan2add.Data(:,2)./Noise.Data(loc,2);
-                
                 S2A  = AxisMZ(:,1);
-                [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
-                S2A(loc, 2) = nnMS;
-
+                if ~isempty(scan2add.Data)
+                    [~, loc] = ismember(scan2add.Data(:,1), Noise.Data(:,1));
+                    nnMS = scan2add.Data(:,2)./Noise.Data(loc,2);
+                    [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
+                    S2A(loc, 2) = nnMS;
+                else
+                    S2A(:, 2) = 0;
+                end
+                
                 scan2add = [ZB(:,1); S2A(:,2); ZB(:,1)];
                 S2NMat   = [S2NMat(:, 2:end), scan2add];
             end
             
-            s = dir(infoDts.Path2Dat{fln}); 
-            if isempty(s), continue, end 
+            s = dir(infoDts.Path2Dat{fln});
+            if isempty(s), continue, end
             if s.bytes > obj.Options.MaxFileSize;
                 [~, rndStr]           = fileparts(tempname);
                 fln                   = fln + 1;
@@ -225,7 +228,7 @@ switch MtU{1}
             end
         end
         
-        case 'SGolay'
+    case 'SGolay'
         %% STAVINSKY GOLAY FILTERING HERE
         infoDts.Title = 'SGolay filtered dataset';
         infoDts.Log   = ['PRF=', num2str(m), ' SGF=', options.method,...
@@ -234,7 +237,7 @@ switch MtU{1}
         dt2keep = false(length(dtsIn.AxisX.Data), 1);
         ii = 1:MtU{3}:length(dtsIn.AxisX.Data);
         dt2keep(ii) = true;
-
+        
         SGFMat  = zeros(size(AxisMZ, 1), MtU{2});
         for ii  = 1:MtU{2}
             Scanii  = dtsIn.ListOfScans{ii};
@@ -245,17 +248,17 @@ switch MtU{1}
                 SGFMat(:,ii)  = 0;
             end
         end
-
+        
         h = waitbar(0,'processing scans');
         for ii = 1:length(dtsIn.ListOfScans)
             waitbar(ii/length(dtsIn.ListOfScans))
             MS2Cor      = AxisMZ(:,1);
-
+            
             if ii > (MtU{2}-1)/2 && ii < length(dtsIn.ListOfScans)-(MtU{2}-1)/2
                 SGD = (sgolayfilt(SGFMat', 1, MtU{2}))';
                 MS2Cor      = AxisMZ(:,1);
                 MS2Cor(:,2) = round(SGD(:, (MtU{2}+1)/2));
-
+                
                 % Load the  next scan
                 if ii+(MtU{2}-1)/2 > length(dtsIn.ListOfScans)
                     scan2add = zeros(size(AxisMZ, 1), 1); %#ok<*PREALL>
@@ -267,25 +270,25 @@ switch MtU{1}
                     else
                         SGFMat(:,end+1)  = 0;
                     end
-
-
+                    
+                    
                     SGFMat   =  SGFMat(:, 2:end);
                 end
-
+                
             else
                 MS2Cor(:,2)      = 0;
             end
-
+            
             if dt2keep(ii)
                 % find and remove spikes
                 if options.RemSpks
                     spkSz  = options.SpkSz;
                     MS2Cor = spikesRemoval(MS2Cor, spkSz );
                 end
-
+                
                 infoScn           = Scanii.InfoTrc;
                 [~, partial]      = decipherLog(infoDts.Log);
-
+                
                 infoScn.FT        = partial{1};
                 infoScn.Path2Dat  = infoDts.Path2Dat{fln};
                 infoScn.Loc       = 'inFile';
@@ -296,18 +299,18 @@ switch MtU{1}
                 AxisMZ(:,4)       = max([AxisMZ(:,4), MS2Cor(:,2)], [], 2);
                 allProfiles(ii,2) = sum(MS2Cor(:,2));
                 allProfiles(ii,3) = max(MS2Cor(:,2));
-
+                
                 % reduced trailing zero in excess
                 MS2Cor = trailRem(MS2Cor, 2);
-
+                
                 % recorded each scans
                 if isempty(MS2Cor)
                     infoDts.ListOfScans{ii} = Trace(infoScn);
                 else
                     infoDts.ListOfScans{ii} = Trace(infoScn, MS2Cor);
                 end
-
-
+                
+                
                 s = dir(infoDts.Path2Dat{fln});
                 if isempty(s), continue, end
                 if s.bytes > obj.Options.MaxFileSize;
@@ -320,7 +323,6 @@ switch MtU{1}
         end
         allProfiles   = allProfiles(dt2keep, :);
         infoDts.ListOfScans = infoDts.ListOfScans(dt2keep);
-        
     otherwise
         error('%s is not a recognised method', MtU{1})
 end
@@ -328,7 +330,7 @@ try close(h), catch, end
 
 % creating Dataset
 % reduced trailing zero in AxisMZ to
-AxisMZ        =  trailRem(AxisMZ, 2);
+AxisMZ        = trailRem(AxisMZ, 2);
 
 infoAxis           = dtsIn.AxisX.InfoAxis;
 infoAxis.Loc       = 'inFile';
@@ -404,10 +406,10 @@ infoDts.Option4crt.Options  = options;
 obj.Datasets{end+1}         = Dataset(infoDts);
 obj.save;
 
-    %% SUB FUNCTIONS
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% SUB FUNCTIONS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    %% CHECKVARARGIN
+%% CHECKVARARGIN
     function [options, MtU] = checkVarargin(infoDts, dts, method, varargin)
         % CHECKVARARGIN is used to check the input paramters
         % and create the options parameter.
@@ -459,6 +461,30 @@ obj.save;
                 end
                 options.method = ['RemoveNoise:', num2str(MtU{2}),':',...
                     num2str(MtU{3}),':', num2str(MtU{4})];
+                
+            case 'sgolay'
+                % Check Dataset format
+                if ~strcmp(infoDts.Format, 'profile')
+                    error('The original dataset should be in profile mode, dataset %i is in %f mode',...
+                        dts, infoDts.Format);
+                end
+                
+                % check parameter for method
+                MtU{1} = 'SGolay';
+                if length(MtU) < 2
+                    MtU{2} = 5;
+                else
+                    MtU{2} = str2double(MtU{2});
+                end
+                
+                if length(MtU) < 3
+                    MtU{3} = 1;
+                else
+                    MtU{3} = str2double(MtU{3});
+                end
+                
+                options.method = ['SGolay:', num2str(MtU{2}),':', ...
+                    num2str(MtU{3})];
                 
             otherwise
                 error('Method not recognised')

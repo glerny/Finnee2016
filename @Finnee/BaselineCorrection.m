@@ -155,7 +155,7 @@ for ii = 1:size(corProf, 1)
     provPrf      = prf(IdnZeros, 2);
     noise(ii)    = 2*1.96*std(provPrf(bslPts) - z(bslPts));
     Yc           = prf(:,2);
-    Yc(IdnZeros) = Yc(IdnZeros) - z + noise(ii)/2;
+    Yc(IdnZeros) = Yc(IdnZeros) - z ;
     
     Yc                    = round(Yc);
     Yc(Yc < 0)            = 0;
