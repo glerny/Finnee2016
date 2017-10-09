@@ -225,6 +225,102 @@ switch MtU{1}
             end
         end
         
+        case 'SGolay'
+        %% STAVINSKY GOLAY FILTERING HERE
+        infoDts.Title = 'SGolay filtered dataset';
+        infoDts.Log   = ['PRF=', num2str(m), ' SGF=', options.method,...
+            '|', infoDts.Log];
+        infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
+        dt2keep = false(length(dtsIn.AxisX.Data), 1);
+        ii = 1:MtU{3}:length(dtsIn.AxisX.Data);
+        dt2keep(ii) = true;
+
+        SGFMat  = zeros(size(AxisMZ, 1), MtU{2});
+        for ii  = 1:MtU{2}
+            Scanii  = dtsIn.ListOfScans{ii};
+            if ~isempty(Scanii.Data)
+                [~, loc] = ismember(Scanii.Data(:,1), AxisMZ(:,1));
+                SGFMat(loc, ii)  =  Scanii.Data(:,2);
+            else
+                SGFMat(:,ii)  = 0;
+            end
+        end
+
+        h = waitbar(0,'processing scans');
+        for ii = 1:length(dtsIn.ListOfScans)
+            waitbar(ii/length(dtsIn.ListOfScans))
+            MS2Cor      = AxisMZ(:,1);
+
+            if ii > (MtU{2}-1)/2 && ii < length(dtsIn.ListOfScans)-(MtU{2}-1)/2
+                SGD = (sgolayfilt(SGFMat', 1, MtU{2}))';
+                MS2Cor      = AxisMZ(:,1);
+                MS2Cor(:,2) = round(SGD(:, (MtU{2}+1)/2));
+
+                % Load the  next scan
+                if ii+(MtU{2}-1)/2 > length(dtsIn.ListOfScans)
+                    scan2add = zeros(size(AxisMZ, 1), 1); %#ok<*PREALL>
+                else
+                    scan2add = dtsIn.ListOfScans{ii+(MtU{2}-1)/2};
+                    if ~isempty(scan2add.Data)
+                        [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
+                        SGFMat(loc, end+1)  =  scan2add.Data(:,2);
+                    else
+                        SGFMat(:,end+1)  = 0;
+                    end
+
+
+                    SGFMat   =  SGFMat(:, 2:end);
+                end
+
+            else
+                MS2Cor(:,2)      = 0;
+            end
+
+            if dt2keep(ii)
+                % find and remove spikes
+                if options.RemSpks
+                    spkSz  = options.SpkSz;
+                    MS2Cor = spikesRemoval(MS2Cor, spkSz );
+                end
+
+                infoScn           = Scanii.InfoTrc;
+                [~, partial]      = decipherLog(infoDts.Log);
+
+                infoScn.FT        = partial{1};
+                infoScn.Path2Dat  = infoDts.Path2Dat{fln};
+                infoScn.Loc       = 'inFile';
+                infoScn.Precision = 'single';
+                AxisMZ(:,2)       = AxisMZ(:,2) + MS2Cor(:,2);
+                iNZ = MS2Cor(:,2) > 0;
+                AxisMZ(iNZ, 3)    = AxisMZ(iNZ, 3) + 1;
+                AxisMZ(:,4)       = max([AxisMZ(:,4), MS2Cor(:,2)], [], 2);
+                allProfiles(ii,2) = sum(MS2Cor(:,2));
+                allProfiles(ii,3) = max(MS2Cor(:,2));
+
+                % reduced trailing zero in excess
+                MS2Cor = trailRem(MS2Cor, 2);
+
+                % recorded each scans
+                if isempty(MS2Cor)
+                    infoDts.ListOfScans{ii} = Trace(infoScn);
+                else
+                    infoDts.ListOfScans{ii} = Trace(infoScn, MS2Cor);
+                end
+
+
+                s = dir(infoDts.Path2Dat{fln});
+                if isempty(s), continue, end
+                if s.bytes > obj.Options.MaxFileSize;
+                    [~, rndStr]           = fileparts(tempname);
+                    fln                   = fln + 1;
+                    infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
+                    infoScn.Path2Dat      = infoDts.Path2Dat{fln};
+                end
+            end
+        end
+        allProfiles   = allProfiles(dt2keep, :);
+        infoDts.ListOfScans = infoDts.ListOfScans(dt2keep);
+        
     otherwise
         error('%s is not a recognised method', MtU{1})
 end
