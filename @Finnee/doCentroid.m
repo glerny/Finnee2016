@@ -217,8 +217,8 @@ obj.save;
                 MtU{1} = 'LocalMax';
                 if length(MtU) < 2, MtU{2} = '2'; end
                 if length(MtU) < 3, MtU{3} = '0'; end
-                MtU{2} = int16(str2double(MtU{2}));
-                MtU{3} = int16(str2double(MtU{3}));
+                MtU{2} = int32(str2double(MtU{2}));
+                MtU{3} = int32(str2double(MtU{3}));
                 if MtU{2} < 1
                     warning('The first parameter of LocalMax should be higher than 0. Parameters set to 1');
                     MtU{2} = 1;

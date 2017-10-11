@@ -28,18 +28,11 @@ classdef Trace
         AxisX        % Information about AxisX (label, unit precision)
         AxisY        % Information about AxisY (label, unit precision)
         Path2Fin     % Link to the Finnee folder
-        
-    end
-    
-    properties (Hidden = true, SetAccess = immutable)
         Precision    % 'inFile' only; Precision in the binary files
         Path2Dat     % 'InFile' only; Address to the file where
         % the data are stored
         Index        % 'inFile' only; Index to the part of the file of interest
         StoredData   % 'inAxis' only; The data
-    end     
-       
-    properties (Hidden = true)
         DataStorage % Define how and where the data are stored
         %   'None'    : No Data
         %   'intrace' : data are within the class

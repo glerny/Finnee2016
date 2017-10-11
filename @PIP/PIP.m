@@ -22,9 +22,6 @@ classdef PIP
         AxisY
         AxisZ
         Lbl4FOM
-    end
-    
-    properties (Hidden)
         deconvolved = false
     end
     

@@ -19,14 +19,14 @@ classdef PeakList
         LstPIP      % List of all the PIP
         FOM         % summary of all FOMs
         % #PIP|max I|time @ max I|M0|M1|M2|M3|mean(m/z)|std(m/z)|AccMass
+        
+        sFOM        = nan(1, 11);
+        nFOM        = ones(1, 11);
         Type        % 'singleton'  dtsIn is a 'centroid' dataset
         % 'replicates' dtsIn is a array of peaklist
         Path2Fin
         Log2crea
         p4norm
-    end
-    
-    properties (Hidden)
         options     % Options
         AxisX
         AxisY
