@@ -74,7 +74,7 @@ if rpts > 1
     end
     dt4std = max(dt4mz) - min(dt4mz);
     DelMz = mean(dt4std) + 2*CI*std(dt4std);
-    fprintf('\nOptimized Dmz = %.4f\n', DelMz) 
+    fprintf('\nOptimized Dmz = %.4f\n', DelMz)
     
     % Time normalisation
     dt4time = squeeze(dt4norm(:, 2,:));
@@ -84,7 +84,7 @@ if rpts > 1
     end
     dt4std =  max(dt4time) - min(dt4time);
     DelTm = mean(dt4std) + 2*CI*std(dt4std);
-    fprintf('Optimized DTm = %.2f\n', DelTm) 
+    fprintf('Optimized DTm = %.2f\n', DelTm)
     
     %  Intensity normalisation
     
@@ -198,10 +198,6 @@ if rpts > 1
         title('Filtered out data')
     end
     
-    % sorting dt2keep by replicates
-    for ii = 1:size(dt2keep, 3)
-        dt2keep(:,:, ii) = sortrows(squeeze(dt2keep(:,:, ii)), 6);
-    end
     obj.Replicates{m}.Summary = dt2keep;
     
     % Create the peak List
@@ -230,46 +226,47 @@ if rpts > 1
         data2merged.mass = zeros(size(AxisX{1}));
         data2merged.ntz  = zeros(size(AxisX{1}));
         tFOM = [];
+        rept2 = 0;
         
         for ii = 1:rpts
             IdT = dt2keep(ii, 1,jj);
-            if isnan(IdT)
-                disp('ttt')
-            else
-            cData = pklIn{ii}.LstPIP{1}{IdT}.Data;
-            
-            tFOM = [tFOM; pklIn{ii}.LstPIP{1}{IdT}.FOM];
-            cData(:,1) = cData(:,1) + polyval(p{ii,1}, cData(:,1));
-            cData(:,3) = AxisX{ii}(cData(:,3));
-            
-            tm = unique(cData(:,3));
-            uData = zeros(length(tm), 3);
-            for kk = 1:length(tm)
-                Id2B = cData(:,3) == tm(kk);
-                uData(kk,3) = tm(kk);
-                uData(kk,2) = sum(cData(Id2B, 2));
-                uData(kk,1) = sum(cData(Id2B, 1).*cData(Id2B, 2))/sum(cData(Id2B, 2));
-            end
-            
-            data2add = interp1(uData(:,3), uData(:,1), AxisX{1}, 'linear');
-            data2add(isnan(data2add)) = 0;
-            data2merged.mass = data2merged.mass + data2add;
-            data2add = interp1(uData(:,3), uData(:,2), AxisX{1}, 'linear');
-            data2add(isnan(data2add)) = 0;
-            data2merged.Int  = data2merged.Int + data2add;
-            nz               = find(data2add~=0);
-            data2merged.ntz(nz)  = data2merged.ntz(nz)+1;
+            if ~isnan(IdT)
+                cData = pklIn{ii}.LstPIP{1}{IdT}.Data;
+                rept2 = rept2+1;
+                
+                tFOM = [tFOM; pklIn{ii}.LstPIP{1}{IdT}.FOM];
+                cData(:,1) = cData(:,1) + polyval(p{ii,1}, cData(:,1));
+                cData(:,3) = AxisX{ii}(cData(:,3));
+                
+                tm = unique(cData(:,3));
+                uData = zeros(length(tm), 3);
+                for kk = 1:length(tm)
+                    Id2B = cData(:,3) == tm(kk);
+                    uData(kk,3) = tm(kk);
+                    uData(kk,2) = sum(cData(Id2B, 2));
+                    uData(kk,1) = sum(cData(Id2B, 1).*cData(Id2B, 2))/sum(cData(Id2B, 2));
+                end
+                
+                data2add = interp1(uData(:,3), uData(:,1), AxisX{1}, 'linear');
+                data2add(isnan(data2add)) = 0;
+                data2merged.mass = data2merged.mass + data2add;
+                data2add = interp1(uData(:,3), uData(:,2), AxisX{1}, 'linear');
+                data2add(isnan(data2add)) = 0;
+                data2merged.Int  = data2merged.Int + data2add;
+                nz               = find(data2add~=0);
+                data2merged.ntz(nz)  = data2merged.ntz(nz)+1;
             end
         end
         
         data2merged.mass = data2merged.mass./ data2merged.ntz;
-        data2merged.Int  = round(data2merged.Int/rpts);
+        data2merged.Int  = round(data2merged.Int/rept2);
         data2merged.Int(data2merged.Int < 0) = 0;
         BPPm(:,2) = max(BPPm(:,2), data2merged.Int);
         TIPm(:,2) = TIPm(:,2) + data2merged.Int;
         IdNZ = find(data2merged.Int ~= 0);
         try
-            mergedPIP{jj} = pklIn{1}.LstPIP{1}{dt2keep(1, 1,jj)};
+            Id = find(~isnan(dt2keep(:, 1,jj)));
+            mergedPIP{jj} = pklIn{1}.LstPIP{1}{dt2keep(Id(1), 1,jj)};
             mergedPIP{jj}.IdS = IdNZ(1);
         catch
             disp('WTF')
@@ -279,8 +276,8 @@ if rpts > 1
         mergedPIP{jj}.x =  AxisX{1}(min(IdNZ):max(IdNZ));
         
         myPeakList.FOM{1}.Data(jj, :) = [jj, mean(tFOM,1,'omitnan')];
-        myPeakList.sFOM               = [nan, std(tFOM,1,'omitnan')];
-        myPeakList.nFOM               = [nan, sum(~isnan(t))];
+        myPeakList.sFOM(jj, :)        = [nan, std(tFOM,1,'omitnan')];
+        myPeakList.nFOM(jj, :)        = [nan, sum(~isnan(tFOM))];
     end
     
     InfoBPP = pklIn{1}.BPP{1}.InfoTrc;

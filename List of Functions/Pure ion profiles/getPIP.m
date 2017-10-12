@@ -5,7 +5,7 @@ LstPIP    = {};
 for ii = 1:length(FstCut)-1
     LFC    = LoPts(FstCut(ii):FstCut(ii+1)-1, :);
     LFC    = sortrows(LFC, 3);
-    SndCut = [1; find(diff(LFC(:,3)) > 1)+1; size(LFC,1)+1];
+    SndCut = [1; find(diff(LFC(:,3)) > 3)+1; size(LFC,1)+1];
     for jj = 1:length(SndCut) -1
         cPIP    = LFC(SndCut(jj):SndCut(jj+1)-1, :);
         if size(unique(cPIP(:,3)), 1) >= minPts && max(cPIP(:,2)) >= ThrIt
