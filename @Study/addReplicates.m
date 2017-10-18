@@ -266,7 +266,7 @@ if rpts > 1
         IdNZ = find(data2merged.Int ~= 0);
         try
             Id = find(~isnan(dt2keep(:, 1,jj)));
-            mergedPIP{jj} = pklIn{1}.LstPIP{1}{dt2keep(Id(1), 1,jj)};
+            mergedPIP{jj} = pklIn{Id(1)}.LstPIP{1}{dt2keep(Id(1), 1,jj)};
             mergedPIP{jj}.IdS = IdNZ(1);
         catch
             disp('WTF')
