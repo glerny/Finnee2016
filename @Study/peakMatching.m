@@ -6,7 +6,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [output, Tag] = peakMatching(obj, parameters, varargin)
+function [output, Tag, sutput] = peakMatching(obj, parameters, varargin)
 
 options.CI4PM     = 2.58;
 % STEP 1. Peak matching
@@ -20,16 +20,20 @@ RSDT = str2double(P{2});
 
 % 1.1.2. Build a matrix will all FOM
 nrpli = length(obj.Replicates);
-allFOM = [];
+allFOM  = [];
+allsFOM = [];
 for ii = 1:nrpli
-    FOM = obj.Replicates{ii}.PeakList.FOM{1}.Data;
-    FOM(:, end+1) = ii;
-    allFOM = [allFOM; FOM];
+    FOM  = obj.Replicates{ii}.PeakList.FOM{1}.Data;
+    sFOM = obj.Replicates{ii}.PeakList.sFOM;
+    FOM(:, end+1)  = ii;
+    sFOM(:, end+1) = ii;
+    allFOM  = [allFOM; FOM];
+    allsFOM = [allsFOM; sFOM];
     Tag{ii} = [obj.Replicates{ii}.Tag, '/', ...
         obj.Replicates{ii}.name, '/', ...
         num2str(obj.Replicates{ii}.nbrReplicates)];
 end
-
+allsFOM(:,1) = allFOM(:,1);
 % 1.1.2. Remove FOM of max Intnesity lower than ThIT Important to improve
 % accuracy (SHOULD ADD CONTROL)
 
@@ -71,6 +75,7 @@ allFOM = sortrows(allFOM, 10);
 Id = [0; find(diff(allFOM(:,10)) > DelMz); size(allFOM, 1)];
 IdX      = {};
 output   = [];
+sutput   = [];
 
 for ii = 1:length(Id)-1
     Cut = allFOM (Id(ii)+1:Id(ii+1), :);
@@ -86,6 +91,13 @@ for ii = 1:length(Id)-1
                 data2add             = NaN(nrpli, 12);
                 data2add(Cut2(:,12),:) = Cut2;
                 output(:, :, end+1)  = data2add;
+                
+                data2add2             = NaN(nrpli, 12);
+                c = ismember(allsFOM(:,1), Cut2(:,1)) &...
+                    ismember(allsFOM(:,12), Cut2(:,12));
+                sCut = allsFOM(c, :);
+                data2add2(sCut(:,12),:) = sCut;
+                sutput(:, :, end+1)  = data2add2;
             else
                 
                 while ~isempty(Cut2)
@@ -124,6 +136,13 @@ for ii = 1:length(Id)-1
                     data2add             = NaN(nrpli, 12);
                     data2add(Cut3(:,12), :) = Cut3;
                     output(:, :, end+1)  = data2add;
+                    
+                    data2add2             = NaN(nrpli, 12);
+                    c = ismember(allsFOM(:,1), Cut3(:,1)) &...
+                        ismember(allsFOM(:,12), Cut3(:,12));
+                    sCut = allsFOM(c, :);
+                    data2add2(sCut(:,12),:) = sCut;
+                    sutput(:, :, end+1)  = data2add2;
                 end
             end
         end
@@ -131,10 +150,18 @@ for ii = 1:length(Id)-1
         data2add             = NaN(nrpli, 12);
         data2add(Cut(:,12), :) = Cut;
         output(:, :, end+1)  = data2add;
+        
+        data2add2             = NaN(nrpli, 12);
+        c = ismember(allsFOM(:,1), Cut(:,1)) &...
+            ismember(allsFOM(:,12), Cut(:,12));
+        sCut = allsFOM(c, :);
+        data2add2(sCut(:,12),:) = sCut;
+        sutput(:, :, end+1)  = data2add2;
     end
 end
 
 output(:, :, 1) = [];
+sutput(:, :, 1) = [];
 
 end
 

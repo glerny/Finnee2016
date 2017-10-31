@@ -1,24 +1,24 @@
 %% DESCRIPTION
 % ALIGN2NEWMZ is used to normalise every MS scans in a datasets to a
-% common mz axis. 
-% 
+% common mz axis.
+%
 %% INPUT PARAMETERS
 % *Compulsory*
 % *obj      : The Finnee object
 % *dts      : The indice to the dataset that contains the original scans
 %           (should be profile scans)
 % *newAxis  : The mz axis that will be used as reference for every scans.
-%           This parameter can be empty, in this case the optional parameter 
+%           This parameter can be empty, in this case the optional parameter
 %           'masterAxis' should be used to defined the new mz Axis (see
 %           *optional')
 %
 % *Optional*
-% *tLim       : Followed by a 2x1 array of numbers (default [0 inf]). Only 
+% *tLim       : Followed by a 2x1 array of numbers (default [0 inf]). Only
 %             records scans between tLim(1) and tLim(2)
-% *spikes     : Followed by an integer between 0 and 3 (default 2) (see the 
-%             method @Finnee\FilterDataset) for additional information. 
-%             Remove spikes in every MS scans If used, where spikes are any 
-%             peaks in each MS of length equal or lower that the integer. 
+% *spikes     : Followed by an integer between 0 and 3 (default 2) (see the
+%             method @Finnee\FilterDataset) for additional information.
+%             Remove spikes in every MS scans If used, where spikes are any
+%             peaks in each MS of length equal or lower that the integer.
 %             'spikes' followed by 0 allows to to turn off spikes removal.
 % *masterAxis': Followed by a string in the form 'mzStart:mzEnd:Id'.
 %             mzStart and mzEnd will be used to defined the limit of the
@@ -26,9 +26,9 @@
 %             generate the mzAxis (used max if you want to use the most
 %             aboundant scans). For more information see help at
 %             @Trace\extrapolMZ
-% *meth4int'  : Followed by a string to specify an alternative 
-%             interpolation method: 'nearest', 'next', 'previous', 
-%             'linear','spline','pchip', or 'cubic'. The default method is 
+% *meth4int'  : Followed by a string to specify an alternative
+%             interpolation method: 'nearest', 'next', 'previous',
+%             'linear','spline','pchip', or 'cubic'. The default method is
 %             'linear'. help interp1 for more information on the
 %             interpolation function. Changing this option is not advised.
 %
@@ -100,30 +100,42 @@ for ii = 1:length(dtsIn.AxisX.Data)
     
     infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
     Scanii  = dtsIn.ListOfScans{ii};
-    Id2Keep = Scanii.Data(:,1) >= newAxis(1) & Scanii.Data(:,1) <= newAxis(end);
     
-    
-    XMS = newAxis;
-    XY  = Scanii.Data(Id2Keep, :);
-    [~, ia, ~] = unique(XY(:,1));
-    XY  = XY(ia, :);
-    
-    try
-    XMS(:,2) =  interp1(XY(:,1), XY(:,2), XMS(:,1),...
-        options.mth4interp1);
-    catch
-        [C, ia, ic] = unique(Scanii.Data(Id2Keep,1));
-        disp('wtf')
+    if ~isempty(Scanii.Data)
+        
+        try
+            Id2Keep = Scanii.Data(:,1) >= newAxis(1) & Scanii.Data(:,1) <= newAxis(end);
+        catch
+            disp('wtf')
+        end
+        
+        XMS = newAxis;
+        XY  = Scanii.Data(Id2Keep, :);
+        [~, ia, ~] = unique(XY(:,1));
+        XY  = XY(ia, :);
+        
+        try
+            XMS(:,2) =  interp1(XY(:,1), XY(:,2), XMS(:,1),...
+                options.mth4interp1);
+        catch
+            [C, ia, ic] = unique(Scanii.Data(Id2Keep,1));
+            disp('wtf')
+        end
+        XMS(isnan(XMS(:,2)), 2) = 0;
+        XMS(:,2) = round(XMS(:,2));
+        XMS(XMS(:,2) <0, 2) = 0;
+        
+        % Filter spikes if needed
+        if obj.Options.RemSpks
+            spkSz = obj.Options.SpkSz;
+            XMS   = spikesRemoval(XMS, spkSz );
+        end
+        
+    else
+        XMS = newAxis;
+        XMS(:,2) = 0;
     end
-    XMS(isnan(XMS(:,2)), 2) = 0;
-    XMS(:,2) = round(XMS(:,2));
-    XMS(XMS(:,2) <0, 2) = 0;
     
-    % Filter spikes if needed
-    if obj.Options.RemSpks
-        spkSz = obj.Options.SpkSz;
-        XMS   = spikesRemoval(XMS, spkSz );
-    end
     
     AxisMZ(:, 2) = AxisMZ(:,2) + XMS(:,2);
     AxisMZ(XMS(:,2) > 0, 3) = AxisMZ(XMS(:,2) > 0, 3) + 1;
@@ -302,7 +314,7 @@ obj.save;
         if isempty(newAxis)
             options.MstAxis      = true;
             options.mth4mstAxis  =  [num2str(infoDts.MZlim(1)), ':', ...
-              num2str(infoDts.MZlim(2)), ':max'] ;
+                num2str(infoDts.MZlim(2)), ':max'] ;
         end
         
         tgtIx = input('masterAxis');

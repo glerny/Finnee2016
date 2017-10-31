@@ -31,4 +31,4 @@ for ii = 1:iterMax;
     L = length(dn);
 end
 
-bslPts = w > 0.05;
+bslPts = abs((m-d)/s) < 1.98;

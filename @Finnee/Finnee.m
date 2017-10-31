@@ -570,8 +570,13 @@ classdef Finnee
                                 end
                                 
                                 if  doRecord
-                                    allProfiles(end, 2) = sum(MS(:,2));
-                                    allProfiles(end, 3) = max(MS(:,2));
+                                    if  ~isempty(MS)
+                                        allProfiles(end, 2) = sum(MS(:,2));
+                                        allProfiles(end, 3) = max(MS(:,2));
+                                    else
+                                        allProfiles(end, 2) = 0;
+                                        allProfiles(end, 3) = 0;
+                                    end
                                 end
                             end
                         end

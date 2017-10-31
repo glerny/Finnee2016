@@ -42,4 +42,4 @@ for ii = 1:iterMax;
     
 end
 
-bslPts = w > 0.05;
+bslPts = abs((m-d)/s) < 1.98;

@@ -125,7 +125,7 @@ end
                 currentLine = [currentLine(1:IdS(1)), num2str(ii-1), ...
                     currentLine(IdS(1)+IdE(2)-1:end)];
                 
-                IdS = strfind(currentLine, 'scan=') + 4;
+                IdS = strfind(currentLine, 'cycle=') + 5;
                 IdE =  strfind(currentLine(IdS:end), ' ');
                 currentLine = [currentLine(1:IdS(1)), num2str(ii), ...
                     currentLine(IdS(1)+IdE(1)-1:end)];

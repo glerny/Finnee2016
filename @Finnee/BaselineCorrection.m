@@ -78,6 +78,7 @@ for ii = 1:length(profile(:,1))
     profile(ii,5) = max( MS(~IndMax, 2));
 end
 try close(h), catch, end
+assignin('base', 'profile', profile)
 
 if bool
     f2 = figure('Name', 'Selected Profiles for Baseline Corrections');
