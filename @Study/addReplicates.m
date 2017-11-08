@@ -301,7 +301,7 @@ if isempty(obj.Path2Std)
     end
 end
 
-
+assignin('base', 'TIP', TIP)
 save(obj);
 
 end
