@@ -1,4 +1,7 @@
 # News
+## @29/11/2017
+The beta version is now released. The AnalyseThis and Trace objects will be removed in futur version. 
+
 ## @23/11/2017
 In preparation for the submission of a new manuscript, I am now updating the wiki. After many changes and optimisation, I am now happy with the first part of the Finnee toolbox. While the new version will still evolve, it is now "stable".
 ## @18/07/2017
