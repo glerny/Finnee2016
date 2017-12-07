@@ -62,7 +62,7 @@
 % * <https://finneeblog.wordpress.com/>
 %
 %% COPYRIGHT
-% Copyright BSD 3-Clause License Copyright 2016-2017 G. Erny
+% Copyright BSD 3-Clause License Copyright 2016-2018 G. Erny
 % (guillaume@fe.up.pt), FEUP, Porto, Portugal
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

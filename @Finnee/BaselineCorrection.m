@@ -139,7 +139,7 @@ for ii = 1:size(corProf, 1)
     MtU = strsplit(options.baseline, ':');
     IdnZeros = prf(:,2) > 0;
     switch MtU{1}
-        case 'PF'
+        case 'PolyFit'
             n = str2double(MtU{2});
             [z, bslPts] = doPF(prf(IdnZeros, :), n);
             

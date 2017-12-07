@@ -4,7 +4,7 @@ function [mzAxis, r2, data4axis] = extrapolMZ(obj, n, Lim)
 
 if nargin == 1
     Lim = [0 inf];
-    n   = 6;
+    n   = 3;
 elseif nargin == 2
     Lim = [0 inf];
 end

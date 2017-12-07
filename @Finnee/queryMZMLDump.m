@@ -28,14 +28,14 @@ if strcmpi(string, 'all')
     end
 else
     
-    k  = strfind(obj.MZMLDump, psi_ms_CV);
+    k  = strfind(obj.MZMLDump, string);
     Id = find(~cellfun(@isempty,k));
     if ~isempty(Id)
         for ii = 1:length(Id)
             fprintf('\n%s', obj.MZMLDump{Id(ii)});
         end
     else
-        fprintf('\n %s was not found in MZMLDump', psi_ms_CV)
+        fprintf('\n %s was not found in MZMLDump', string)
     end
 end
 fprintf('\n')

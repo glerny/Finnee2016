@@ -17,8 +17,8 @@
 % *BIS*            : The base ion spectrum
 % *LAST*           : A blank trace
 % *ListOfScans*    : All the MS scans that make the dataset
-% *Option4crt*     : (Hidden) Options for the creation of this dataset
-% *Path2Dat*       : (Hidden) A list of all the dat files 
+% *Option4crt*     : Options for the creation of this dataset
+% *Path2Dat*       : A list of all the dat files 
 % *AxisX*          : Information about the time axis
 % *AxisY*          : Information about the m/z axis
 % *AxisZ*          : Information about the intensity axis
@@ -65,7 +65,7 @@ classdef Dataset
     end
     
      properties (Dependent)
-         InfoDts       % Get back the data of the axis
+         InfoDts       % Get back the data of the Dataset
     end
     
     methods

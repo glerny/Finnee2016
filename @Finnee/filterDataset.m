@@ -103,23 +103,12 @@ switch MtU{1}
             end
         end
         
-    case 'RemoveNoise'
-        %% REMOVENOISE HERE
+    case 'remNoise'
+        %% REMNOISE HERE
         infoDts.Title = 'Noise corrected dataset';
         infoDts.Log   = ['PRF=', num2str(m), ' NCR=', options.method,...
             '|', infoDts.Log];
         Noise   =  obj.Datasets{dts}.AddInfo.Peak2PeakNoise;
-        %         [~, partial] = decipherLog(obj.Datasets{dts}.Log);
-        %         mmz = strfind(partial, 'MMZ');
-        %         for ii = 1:length(mmz)+1
-        %             if ~isempty(mmz{ii})
-        %                 break
-        %             end
-        %         end
-        %         mmz = ii;
-        %         MMZ = obj.Datasets{mmz}.AddInfo.masterMZAxis.Data;
-        %         AxisMZ              = MMZ;
-        %         AxisMZ(:,4)         = 0;
         
         S2NMat  = zeros(size(AxisMZ, 1), 2*MtU{2}+1);
         for ii  = 1:MtU{2}+1
@@ -139,24 +128,12 @@ switch MtU{1}
         h = waitbar(0,'processing scans');
         for ii = 1:length(dtsIn.ListOfScans)
             waitbar(ii/length(dtsIn.ListOfScans))
-            
-            switch MtU{5}
-                case 'n'
-                    % find and remove noise
-                    TM = [];
-                    for jj = -MtU{3}:1:MtU{3}
-                        TM = [TM, circshift(S2NMat, jj)]; %#ok<*AGROW>
-                    end
-                    ind2null = max(TM, [], 2) < MtU{4};
-                    
-                case 'f'
-                    TM = [];
-                    for jj = -MtU{3}:1:MtU{3}
-                        TM = [TM, circshift(S2NMat(:, MtU{2}+1), [jj, 0])]; %#ok<*AGROW>
-                    end
-                    ind2null = max(TM, [], 2) < MtU{4} &  ...
-                        max(S2NMat, [], 2) < MtU{4};
+			
+			TM = [];
+			for jj = -MtU{3}:1:MtU{3}
+				TM = [TM, circshift(S2NMat(:, MtU{2}+1), [jj, 0])]; %#ok<*AGROW>
             end
+			ind2null = max(TM, [], 2) < MtU{4} & max(S2NMat, [], 2) < MtU{4};
             infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
             MS2Cor    = AxisMZ(:,1);
             Scanii = dtsIn.ListOfScans{ii};
@@ -201,22 +178,22 @@ switch MtU{1}
             
             % Load the  next scan
             if ii+MtU{2}+1 > length(dtsIn.ListOfScans)
-                scan2add = zeros(size(AxisMZ, 1), 1); %#ok<*PREALL>
+                S2A  = AxisMZ(:,1);
+                S2A(:, 2) = 0;
             else
                 scan2add = dtsIn.ListOfScans{ii+MtU{2}+1};
                 S2A  = AxisMZ(:,1);
+                S2A(:, 2) = 0;
                 if ~isempty(scan2add.Data)
                     [~, loc] = ismember(scan2add.Data(:,1), Noise.Data(:,1));
                     nnMS = scan2add.Data(:,2)./Noise.Data(loc,2);
                     [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
                     S2A(loc, 2) = nnMS;
-                else
-                    S2A(:, 2) = 0;
                 end
-                
-                scan2add = [ZB(:,1); S2A(:,2); ZB(:,1)];
-                S2NMat   = [S2NMat(:, 2:end), scan2add];
             end
+            scan2add = [ZB(:,1); S2A(:,2); ZB(:,1)];
+            S2NMat   = [S2NMat(:, 2:end), scan2add];
+
             
             s = dir(infoDts.Path2Dat{fln});
             if isempty(s), continue, end
@@ -230,7 +207,7 @@ switch MtU{1}
         
     case 'SGolay'
         %% STAVINSKY GOLAY FILTERING HERE
-        infoDts.Title = 'SGolay filtered dataset';
+        infoDts.Title = 'SGolay filtered dataset'; %%% One d SGolay through time, what about 2D?
         infoDts.Log   = ['PRF=', num2str(m), ' SGF=', options.method,...
             '|', infoDts.Log];
         infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
@@ -239,13 +216,13 @@ switch MtU{1}
         dt2keep(ii) = true;
         
         SGFMat  = zeros(size(AxisMZ, 1), MtU{2});
-        for ii  = 1:MtU{2}
+        for ii  = 1:(MtU{2}+1)/2
             Scanii  = dtsIn.ListOfScans{ii};
             if ~isempty(Scanii.Data)
                 [~, loc] = ismember(Scanii.Data(:,1), AxisMZ(:,1));
-                SGFMat(loc, ii)  =  Scanii.Data(:,2);
+                SGFMat(loc, ii+(MtU{2}-1)/2)  =  Scanii.Data(:,2);
             else
-                SGFMat(:,ii)  = 0;
+                SGFMat(:,ii+(MtU{2}-1)/2)  = 0;
             end
         end
         
@@ -253,16 +230,12 @@ switch MtU{1}
         for ii = 1:length(dtsIn.ListOfScans)
             waitbar(ii/length(dtsIn.ListOfScans))
             MS2Cor      = AxisMZ(:,1);
+            SGD = (sgolayfilt(SGFMat', 1, MtU{2}))';
+            MS2Cor      = AxisMZ(:,1);
+            MS2Cor(:,2) = round(SGD(:, (MtU{2}+1)/2));
             
-            if ii > (MtU{2}-1)/2 && ii < length(dtsIn.ListOfScans)-(MtU{2}-1)/2
-                SGD = (sgolayfilt(SGFMat', 1, MtU{2}))';
-                MS2Cor      = AxisMZ(:,1);
-                MS2Cor(:,2) = round(SGD(:, (MtU{2}+1)/2));
-                
-                % Load the  next scan
-                if ii+(MtU{2}-1)/2 > length(dtsIn.ListOfScans)
-                    scan2add = zeros(size(AxisMZ, 1), 1); %#ok<*PREALL>
-                else
+            % Load the  next scan
+                if ii+(MtU{2}-1)/2 <= length(dtsIn.ListOfScans)
                     scan2add = dtsIn.ListOfScans{ii+(MtU{2}-1)/2};
                     if ~isempty(scan2add.Data)
                         [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
@@ -270,17 +243,17 @@ switch MtU{1}
                     else
                         SGFMat(:,end+1)  = 0;
                     end
-                    
-                    
-                    SGFMat   =  SGFMat(:, 2:end);
+                else
+                    SGFMat(:,end+1)  = 0;
                 end
+                SGFMat   =  SGFMat(:, 2:end);
                 
-            else
-                MS2Cor(:,2)      = 0;
-            end
-            
             if dt2keep(ii)
                 % find and remove spikes
+                
+                MS2Cor(MS2Cor(:,2) < 0, 2) = 0;
+                
+                
                 if options.RemSpks
                     spkSz  = options.SpkSz;
                     MS2Cor = spikesRemoval(MS2Cor, spkSz );
@@ -433,7 +406,7 @@ obj.save;
                 end
                 options.method = ['RemoveSpikes:', num2str(MtU{2})];
                 
-            case 'removenoise'
+            case 'remnoise'
                 % Check Dataset format
                 if ~strcmp(infoDts.Format, 'profile')
                     error('The original dataset should be in profile mode, dataset %i is in %f mode',...
@@ -441,9 +414,9 @@ obj.save;
                 end
                 
                 % check parameter for method
-                MtU{1} = 'RemoveNoise';
+                MtU{1} = 'remNoise';
                 if length(MtU) < 2
-                    MtU{2} = 3;
+                    MtU{2} = 10;
                 else
                     MtU{2} = str2double(MtU{2});
                 end
@@ -455,7 +428,7 @@ obj.save;
                 end
                 
                 if length(MtU) < 4
-                    MtU{4} = 100;
+                    MtU{4} = 10;
                 else
                     MtU{4} = str2double(MtU{4});
                 end
@@ -492,7 +465,7 @@ obj.save;
         
         % 2- Default parameters
         options.RemSpks = true;
-        options.SpkSz   = 2;
+        options.SpkSz   = 1;
         
         % 3- Decipher varargin
         input = @(x) find(strcmpi(varargin,x),1);

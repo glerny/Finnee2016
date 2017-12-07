@@ -32,10 +32,10 @@ classdef Trace
         Path2Dat     % 'InFile' only; Address to the file where
         % the data are stored
         Index        % 'inFile' only; Index to the part of the file of interest
-        StoredData   % 'inAxis' only; The data
+        StoredData   % 'inTrace' only; The data
         DataStorage % Define how and where the data are stored
         %   'None'    : No Data
-        %   'intrace' : data are within the class
+        %   'inTrace' : data are within the class
         %   'inFile'  : data are stored in an associated binary file
         AdiParam    % Place to put parameter for any normalisation/correction
         % should be a structure with two filed, Uses and Values
@@ -44,9 +44,6 @@ classdef Trace
     properties (Dependent)
         Data         % The data
         InfoTrc      % Get back the data of the Axis
-    end
-    
-    properties (Dependent, Hidden)
         bz           % Bit sizes, depend on the precision of the binary file
     end
     
