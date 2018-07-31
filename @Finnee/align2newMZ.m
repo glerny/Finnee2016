@@ -72,7 +72,7 @@ if options.MstAxis
     MZlim(1) = min( str2double(M4MA{1}), str2double(M4MA{2}));
     MZlim(2) = max( str2double(M4MA{1}), str2double(M4MA{2}));
     
-    newAxis = dtsIn.ListOfScans{Id4MA}.extrapolMZ(2, MZlim);
+    [newAxis, r2, data4axis] = dtsIn.ListOfScans{Id4MA}.extrapolMZ(2, MZlim);
 end
 
 % Initiation of profiles
