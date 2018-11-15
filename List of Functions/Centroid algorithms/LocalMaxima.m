@@ -25,6 +25,7 @@ function redMS = LocalMaxima(XY, wdz, thrI)
 %% CORE OF THE FUNCTION
 % Finding non nul local maxima
 yy = XY(:,2);
+yy(yy <= thrI) = 0;
 A = zeros(length(yy), 2*wdz + 1);
 for ii = 1:2*wdz+1;
     ind1 = max(1, wdz+2-ii);
@@ -73,28 +74,28 @@ else
     redMS = [];
 end
 
-% calculate peak width at half-height
-for ii = 1:size(redMS)
-    IdT  = I4LM(ii);
-    Y    = redMS(ii, 2)/2;
-    
-    IdS  = find(XY(1:IdT, 2) <= Y, 1, 'last');
-    if isempty(IdS)
-        IdS = 1;
-    end
-    a    = (XY(IdS, 2) - XY(IdS+1, 2)) / (XY(IdS, 1) - XY(IdS+1, 1));
-    b    = XY(IdS, 2) - XY(IdS, 1)*a;
-    Xl   = (Y - b)/a;
-    
-    IdS  = find(XY(IdT:end, 2) <= Y, 1, 'first') + IdT -1;
-    if isempty(IdS)
-        IdS = size(XY, 1);
-    end
-    a    = (XY(IdS-1, 2) - XY(IdS, 2)) / (XY(IdS -1, 1) - XY(IdS, 1));
-    b    = XY(IdS, 2) - XY(IdS, 1)*a;
-    Xr   = (Y - b)/a;
-    redMS(ii, 3) = Xr - Xl;
-end
+% % calculate peak width at half-height
+% for ii = 1:size(redMS)
+%     IdT  = I4LM(ii);
+%     Y    = redMS(ii, 2)/2;
+%     
+%     IdS  = find(XY(1:IdT, 2) <= Y, 1, 'last');
+%     if isempty(IdS)
+%         IdS = 1;
+%     end
+%     a    = (XY(IdS, 2) - XY(IdS+1, 2)) / (XY(IdS, 1) - XY(IdS+1, 1));
+%     b    = XY(IdS, 2) - XY(IdS, 1)*a;
+%     Xl   = (Y - b)/a;
+%     
+%     IdS  = find(XY(IdT:end, 2) <= Y, 1, 'first') + IdT -1;
+%     if isempty(IdS)
+%         IdS = size(XY, 1);
+%     end
+%     a    = (XY(IdS-1, 2) - XY(IdS, 2)) / (XY(IdS -1, 1) - XY(IdS, 1));
+%     b    = XY(IdS, 2) - XY(IdS, 1)*a;
+%     Xr   = (Y - b)/a;
+%     redMS(ii, 3) = Xr - Xl;
+% end
     
 
 

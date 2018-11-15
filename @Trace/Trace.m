@@ -98,11 +98,19 @@ classdef Trace
                         obj.StoredData  = [];
                         
                         % Writting the data
-                        fidWriteDat  = fopen(obj.Path2Dat, 'ab');
+                        try
+                        [fidWriteDat, errmsg]  = fopen(obj.Path2Dat, 'ab');
+                        if fidWriteDat == -1
+                            pause(5)
+                            [fidWriteDat, errmsg]  = fopen(obj.Path2Dat, 'ab');
+                        end
                         obj.Index(1)= ftell(fidWriteDat);
                         fwrite(fidWriteDat, data2write, obj.Precision);
                         obj.Index(2)= ftell(fidWriteDat);
                         fclose(fidWriteDat);
+                        catch
+                            disp(errmsg)
+                        end
                         
                     case 'intrace'
                         obj.DataStorage  = 'inTrace';

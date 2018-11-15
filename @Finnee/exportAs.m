@@ -16,18 +16,20 @@ function exportAs( obj, dts, varargin)
 
 % Check the options and create the Finnee object
 options = checkVarargin(varargin{:});
+filterIndex = 1;
 
 if isempty(options.FileOut)
     txtStg              = 'Export Dataset';
-    ext                 = {'*.mzML'};
-    [pathstr,name,extO] = fileparts(obj.FileIn) ;
-    propal              = fullfile(pathstr, [name, '_reduced']);
+    ext                 = '.mzML';
+    path                = obj.Path2Fin;
+    name                = obj.FileID;
+    propal              = fullfile(path, [name, '_dataset', num2str(dts), ext]);
     
-    [fileName, pathName, filterIndex] = uiputfile(ext, txtStg, propal);
-    if ~ischar(fileName) && ~ischar(pathName)
-        error('myApp:argChk', 'User cancel file selection');
-    end
-    options.FileOut = fullfile(pathName, fileName);
+%     [fileName, pathName, filterIndex] = uiputfile(ext, txtStg, propal);
+%     if ~ischar(fileName) && ~ischar(pathName)
+%         error('myApp:argChk', 'User cancel file selection');
+%     end
+    options.FileOut = propal;
 end
 
 switch filterIndex

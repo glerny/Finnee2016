@@ -47,6 +47,7 @@ if isempty(options.FqThres)
     bool = true;
     f1 = figure;
     [N,edges] = histcounts(FIS ,1:1:100);
+    assignin('base', 'histo', [N,edges])
     bar(edges, [0, N]);
     axis([0 100 0 inf])
     hPlot = gcf;
@@ -149,6 +150,9 @@ for ii = 1:size(corProf, 1)
             [z, bslPts] = doArPLS(prf(IdnZeros, 2), lambda, ratio);
             
         case 'ArPLS2'
+
+            
+            
             lambda = str2double(MtU{2});
             [z, bslPts] = doArPLS2(prf(IdnZeros, 2), lambda);
     end
@@ -158,8 +162,8 @@ for ii = 1:size(corProf, 1)
     Yc           = prf(:,2);
     Yc(IdnZeros) = Yc(IdnZeros) - z ;
     
-    Yc                    = round(Yc);
-    Yc(Yc < 0)            = 0;
+    %Yc                    = round(Yc);
+    %Yc(Yc < 0)            = 0;
     corProf(ii, ind2keep) = Yc;
 end
 try close(h), catch, end
@@ -183,8 +187,8 @@ m                   = length(obj.Datasets)+1;
 P2PNoise            = dtsIn.AxisY.Data;
 P2PNoise(IndMax,2)  = noise;
 noise               = sort(noise);
-minNoise            = mean(noise(1:round(0.1*length(noise))));
-P2PNoise(P2PNoise(:,2) < minNoise ,2)  = minNoise;
+% minNoise            = mean(noise(1:round(0.1*length(noise))));
+% P2PNoise(P2PNoise(:,2) < minNoise ,2)  = minNoise;
 
 
 infoDts.Title = 'Baseline corrected dataset';

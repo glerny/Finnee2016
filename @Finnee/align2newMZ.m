@@ -63,7 +63,7 @@ allProfiles(:,3)    = 0;
 if options.MstAxis
     M4MA = strsplit(options.mth4mstAxis, ':');
     
-    if strcmpi(M4MA{3}, 'max');
+    if strcmpi(M4MA{3}, 'max')
         [~,Id4MA] = max(dtsIn.TIP.Data(:,2));
     else
         Id4MA = str2double(M4MA{3});
@@ -122,8 +122,8 @@ for ii = 1:length(dtsIn.AxisX.Data)
             disp('wtf')
         end
         XMS(isnan(XMS(:,2)), 2) = 0;
-        XMS(:,2) = round(XMS(:,2));
-        XMS(XMS(:,2) <0, 2) = 0;
+        % XMS(:,2) = round(XMS(:,2));
+        % XMS(XMS(:,2) <0, 2) = 0;
         
         % Filter spikes if needed
         if obj.Options.RemSpks

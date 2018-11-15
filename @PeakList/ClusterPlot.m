@@ -38,6 +38,7 @@ R = R/rpts;
 % DO the HACA
 h = waitbar(0,'1','Name','creating cluster tree...');
 for ii = 2:length(R(:,1))
+    ii
     max_CC = max(max(triu(R,1)));
     if isvalid(h)
         waitbar(ii/length(R(:,1)), h, sprintf('%.3f => %.3f', max_CC, CluLvl))

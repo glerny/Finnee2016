@@ -29,7 +29,7 @@
 %
 %% Copyright
 % BSD 3-Clause License
-% Copyright 2016-2017 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
+% Copyright 2016-2017 G. Erny (guillaume@fe.up.pt), FEUP, Porto, Portugal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -109,15 +109,20 @@ switch MtU{1}
         infoDts.Log   = ['PRF=', num2str(m), ' NCR=', options.method,...
             '|', infoDts.Log];
         Noise   =  obj.Datasets{dts}.AddInfo.Peak2PeakNoise;
+        nd = Noise.Data;
+        minNoise = round(mean(nd(nd(:,2) <= prctile(nd(nd(:,2) > 0, 2), 10) & nd(:,2) > 0, 2)))
+        % minNoise = 5000;
+        nd(nd(:,2) <= minNoise, 2) = minNoise;
         
         S2NMat  = zeros(size(AxisMZ, 1), 2*MtU{2}+1);
         for ii  = 1:MtU{2}+1
             Scanii  = dtsIn.ListOfScans{ii};
             if ~isempty(Scanii.Data)
-                [~, loc] = ismember(Scanii.Data(:,1), Noise.Data(:,1));
-                nnMS = Scanii.Data(:,2)./Noise.Data(loc,2);
+                [~, loc] = ismember(Scanii.Data(:,1), nd(:,1));
+                nnMS = Scanii.Data(:,2)./nd(loc,2);
                 [~, loc] = ismember(Scanii.Data(:,1), AxisMZ(:,1));
-                S2NMat(loc, MtU{2}+ii)  =  nnMS;
+                IZ = loc~= 0;
+                S2NMat(loc(IZ), MtU{2}+ii)  =  nnMS(IZ);
             else
                 S2NMat(:, MtU{2}+ii)  = 0;
             end
@@ -140,7 +145,8 @@ switch MtU{1}
             
             if ~isempty(Scanii.Data)
                 [~, loc] = ismember(Scanii.Data(:,1), MS2Cor(:,1));
-                MS2Cor(loc, 2) = Scanii.Data(:,2);
+                IZ = loc~= 0;
+                MS2Cor(loc(IZ), 2) = Scanii.Data(IZ,2);
                 MS2Cor(ind2null(MtU{3}+1:end-MtU{3}), 2) = 0;
             else
                 MS2Cor(:,2) = 0;
@@ -185,10 +191,11 @@ switch MtU{1}
                 S2A  = AxisMZ(:,1);
                 S2A(:, 2) = 0;
                 if ~isempty(scan2add.Data)
-                    [~, loc] = ismember(scan2add.Data(:,1), Noise.Data(:,1));
-                    nnMS = scan2add.Data(:,2)./Noise.Data(loc,2);
+                    [~, loc] = ismember(scan2add.Data(:,1), nd(:,1));
+                    nnMS = scan2add.Data(:,2)./nd(loc,2);
                     [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
-                    S2A(loc, 2) = nnMS;
+                IZ = loc~= 0;
+                    S2A(loc(IZ), 2) = nnMS(IZ);
                 end
             end
             scan2add = [ZB(:,1); S2A(:,2); ZB(:,1)];
@@ -232,7 +239,7 @@ switch MtU{1}
             MS2Cor      = AxisMZ(:,1);
             SGD = (sgolayfilt(SGFMat', 1, MtU{2}))';
             MS2Cor      = AxisMZ(:,1);
-            MS2Cor(:,2) = round(SGD(:, (MtU{2}+1)/2));
+            MS2Cor(:,2) = SGD(:, (MtU{2}+1)/2);%round(SGD(:, (MtU{2}+1)/2));
             
             % Load the  next scan
                 if ii+(MtU{2}-1)/2 <= length(dtsIn.ListOfScans)
@@ -251,7 +258,7 @@ switch MtU{1}
             if dt2keep(ii)
                 % find and remove spikes
                 
-                MS2Cor(MS2Cor(:,2) < 0, 2) = 0;
+                % MS2Cor(MS2Cor(:,2) < 0, 2) = 0;
                 
                 
                 if options.RemSpks

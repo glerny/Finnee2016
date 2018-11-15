@@ -217,8 +217,8 @@ end
         xlabel([trc.InfoTrc.AxisX.Label, ' / ', trc.InfoTrc.AxisX.Unit]);
         ylabel([trc.InfoTrc.AxisY.Label, ' / ', trc.InfoTrc.AxisY.Unit]);
         
-        Yc          = round(trc.Data(:,2)- myAT.Baseline.vals);
-        Yc(Yc < 0) = 0;
+        Yc          = trc.Data(:,2)- myAT.Baseline.vals; round(trc.Data(:,2)- myAT.Baseline.vals);
+        % Yc(Yc < 0) = 0;
         plot(AxisH{1}, trc.Data(:,1), Yc, 'k')
         title('Corrected profile')
         xlabel([trc.InfoTrc.AxisX.Label, ' / ', trc.InfoTrc.AxisX.Unit]);

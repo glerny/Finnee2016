@@ -46,7 +46,7 @@ dtsIn            = obj.Datasets{dts};
 infoDts          = dtsIn.InfoDts;
 infoDts.Path2Dat = {};
 narginchk(2, inf)
-if nargin == 2,
+if nargin == 2
     method = 'LocalMax:2:0';
 end
 [options, MtU]      = checkVarargin(infoDts, method, varargin{:});
@@ -111,7 +111,7 @@ switch MtU{1}
             % check the size of the dat file
             s = dir(infoDts.Path2Dat{fln});
             if ~isempty(s)
-            if s.bytes > obj.Options.MaxFileSize;
+            if s.bytes > obj.Options.MaxFileSize
                 [~, rndStr]           = fileparts(tempname);
                 fln                   = fln + 1;
                 infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
