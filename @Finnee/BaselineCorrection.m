@@ -206,6 +206,7 @@ for ii = 1:size(allProfiles, 1)
     Scanii            = dtsIn.xpend(dtsIn.ListOfScans{ii});
     XMS               = Scanii.Data;
     XMS(IndMax,2)     = corProf(:, ii);
+    XMS(XMS(:,2) < 0, 2)= 0;
     
     % find and remove spikes
     if options.RemSpks

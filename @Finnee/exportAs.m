@@ -18,18 +18,21 @@ function exportAs( obj, dts, varargin)
 options = checkVarargin(varargin{:});
 filterIndex = 1;
 
-if isempty(options.FileOut)
+if isempty(options.FolderOut)
+    options.FolderOut = uigetdir(obj.Path2Fin);
+end
+
+if isempty (options.FileName)
     txtStg              = 'Export Dataset';
     ext                 = '.mzML';
-    path                = obj.Path2Fin;
+    path                = options.FolderOut;
     name                = obj.FileID;
     propal              = fullfile(path, [name, '_dataset', num2str(dts), ext]);
     
-%     [fileName, pathName, filterIndex] = uiputfile(ext, txtStg, propal);
-%     if ~ischar(fileName) && ~ischar(pathName)
-%         error('myApp:argChk', 'User cancel file selection');
-%     end
-    options.FileOut = propal;
+    [options.FileName, options.FolderOut, filterIndex] = uiputfile(ext, txtStg, propal);
+    if ~ischar((options.FileName)) && ~ischar(options.FolderOut)
+        error('myApp:argChk', 'User cancel file selection');
+    end
 end
 
 switch filterIndex
@@ -41,150 +44,177 @@ end
 
     function ExportAsmzML
         fidRead  = fopen(obj.FileIn, 'r');
-        fidWrite = fopen(options.FileOut, 'w');
+        FO = fullfile(options.FolderOut, options.FileName);
+        fidWrite = fopen(FO, 'w');
         
-        line        = fgetl(fidRead);
-        boolRun     = false;
-        oneSpectrum = {};
-        
-        while ischar(line)
-            if any(strfind(line, '<run '))
-                boolRun = true;
-                fprintf(fidWrite, line);
-                fprintf(fidWrite, '\n');
-                headingLine = fgetl(fidRead);
-                line = fgetl(fidRead);
-                
-            elseif any(strfind(line, '</run>'))
-                boolRun = false;
-            end
-            
-            if boolRun
-                if any(strfind(line, '</spectrum>'))
-                    oneSpectrum{end+1} = line;
-                    break
-                else
-                    oneSpectrum{end+1} = line;
-                end
-            else
-                line = strrep(line, '\', '\\');
-                line = strrep(line, '%', '%%');
-                line = strrep(line, '''', '''''');
-                fprintf(fidWrite, line);
-                fprintf(fidWrite, '\n');
-            end
-            line = fgetl(fidRead);
+        for ii = 1:length(obj.MZMLDump)
+            line = obj.MZMLDump{ii};
+            % line        = fgetl(fidRead);
+            fprintf(fidWrite, '%s', line);
+            fprintf(fidWrite, '\n');
         end
+        line = '<spectrumList count="%s" defaultDataProcessingRef="exportation">';
+        fprintf(fidWrite, line, num2str(length(obj.Datasets{dts}.ListOfScans)));
+        fprintf(fidWrite, '\n');
         
-        fclose(fidRead);
-        printNewScans
-        fprintf(fidWrite, '      </spectrumList>');
-        fprintf(fidWrite, '\n');
-        fprintf(fidWrite, '    </run>');
-        fprintf(fidWrite, '\n');
-        fprintf(fidWrite, '  </mzML>');
-        fprintf(fidWrite, '\n');
-        fprintf(fidWrite, '</indexedmzML>');
-        fclose(fidWrite);
-        
-        function printNewScans
-            AxisX     = obj.Datasets{dts}.AxisX.Data;
+        for ii = 1:length(obj.Datasets{dts}.ListOfScans)
+            MS = obj.Datasets{dts}.ListOfScans{ii}.Data;
             
-            nbrScans = size(AxisX,1);
+            if isempty(MS)
+                MS = [0 0];
+            end
+            mzArray = MS(:,1);
+            mzArray = typecast(mzArray,'uint8');
+            mzArray = zlibencode(mzArray);
+            mzArray =  base64encode(mzArray);
+            ItArray = MS(:,2);
+            ItArray = typecast(ItArray,'uint8');
+            ItArray = zlibencode(ItArray);
+            ItArray = base64encode(ItArray);
             
-            % 1. Edit heading
-            
-            IdS = strfind(headingLine, 'count="') + 6;
-            IdE =  strfind(headingLine(IdS:end), '"');
-            
-            NewHeading = [headingLine(1:IdS(1)), num2str(nbrScans), ...
-                headingLine(IdS(1)+IdE(2)-1:end)];
-            fprintf(fidWrite, NewHeading);
+            line = '<spectrum index="%s" id="scan=%s" defaultArrayLength="%s">';
+            fprintf(fidWrite, line, num2str(ii-1), num2str(ii),  num2str(size(MS,1)));
             fprintf(fidWrite, '\n');
             
-            for ii = 1:length(AxisX)
-                MS = obj.Datasets{dts}.ListOfScans{ii}.Data;
-                
-                if isempty(MS)
-                    MS = [0 0];
-                end
-                    
-                    mzArray = MS(:,1);
-                    mzArray = typecast(mzArray,'uint8');
-                    mzArray = zlibencode(mzArray);
-                    mzArray =  base64encode(mzArray);
-                    ItArray = MS(:,2);
-                    ItArray = typecast(ItArray,'uint8');
-                    ItArray = zlibencode(ItArray);
-                    ItArray = base64encode(ItArray);
-                
-                
-                [m, ~] = findFirstInCellArray(oneSpectrum, '<spectrum');
-                currentLine = oneSpectrum{m};
-                msp = m;
-                IdS = strfind(currentLine, 'index="') + 6;
-                IdE =  strfind(currentLine(IdS:end), '"');
-                currentLine = [currentLine(1:IdS(1)), num2str(ii-1), ...
-                    currentLine(IdS(1)+IdE(2)-1:end)];
-                
-                IdS = strfind(currentLine, 'cycle=') + 5;
-                IdE =  strfind(currentLine(IdS:end), ' ');
-                currentLine = [currentLine(1:IdS(1)), num2str(ii), ...
-                    currentLine(IdS(1)+IdE(1)-1:end)];
-                
-                IdS = strfind(currentLine, 'defaultArrayLength="') + 19;
-                IdE =  strfind(currentLine(IdS:end), '"');
-                currentLine = [currentLine(1:IdS(1)), num2str(size(MS,1)), ...
-                    currentLine(IdS(1)+IdE(2)-1:end)];
-                oneSpectrum{m} = currentLine;
-                
-                [m, ~] = findFirstInCellArray(oneSpectrum, '"scan start time"');
-                currentLine = oneSpectrum{m};
-                IdS = strfind(currentLine, 'value="') + 6;
-                IdE =  strfind(currentLine(IdS:end), '"');
-                currentLine = [currentLine(1:IdS(1)), num2str(AxisX(ii)), ...
-                    currentLine(IdS(1)+IdE(2)-1:end)];
-                oneSpectrum{m} = currentLine;
-                
-                [m, ~] = findFirstInCellArray(oneSpectrum, 'name="m/z array"');
-                currentLine = oneSpectrum{m+1};
-                IdS = strfind(currentLine, '<binary>') + 7;
-                IdE =  strfind(currentLine, '</binary>');
-                currentLine = [currentLine(1:IdS(1)), mzArray, ...
-                    currentLine(IdE(1):end)];
-                oneSpectrum{m+1} = currentLine;
-                
-                currentLine = oneSpectrum{m-3};
-                IdS = strfind(currentLine, 'encodedLength="') + 14;
-                IdE =  strfind(currentLine(IdS:end), '"');
-                currentLine = [currentLine(1:IdS(1)), num2str(size(mzArray,2)), ...
-                    currentLine(IdS(1)+IdE(2)-1:end)];
-                oneSpectrum{m-3} = currentLine;
-                
-                [m, ~] = findFirstInCellArray(oneSpectrum, 'name="intensity array"');
-                currentLine = oneSpectrum{m+1};
-                IdS = strfind(currentLine, '<binary>') + 7;
-                IdE =  strfind(currentLine, '</binary>');
-                currentLine = [currentLine(1:IdS(1)), ItArray, ...
-                    currentLine(IdE(1):end)];
-                oneSpectrum{m+1} = currentLine;
-                
-                currentLine = oneSpectrum{m-3};
-                IdS = strfind(currentLine, 'encodedLength="') + 14;
-                IdE =  strfind(currentLine(IdS:end), '"');
-                currentLine = [currentLine(1:IdS(1)), num2str(size(ItArray,2)), ...
-                    currentLine(IdS(1)+IdE(2)-1:end)];
-                oneSpectrum{m-3} = currentLine;
-                
-                for jj = 1:size(oneSpectrum, 2)
-                    fprintf(fidWrite,'%s', oneSpectrum{jj});
-                    fprintf(fidWrite, '\n');
-                end
-                
+            line = '<cvParam cvRef="MS" accession="MS:1000130" name="positive scan"/>'; %TO RECORD
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000579" name="MS1 spectrum"/>'; %TO RECORD
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            switch obj.Datasets{dts}.Format
+                case 'profile'
+                    line = '<cvParam cvRef="MS" accession="MS:1000128" name="profile spectrum"/>'; %TO RECORD
+                case 'centroid'
+                    line = '<cvParam cvRef="MS" accession="MS:1000128" name="centroid spectrum"/>'; %TO RECORD
             end
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
             
+            line = '<cvParam cvRef="MS" accession="MS:1000285" name="total ion current" value="%s"/>';
+            fprintf(fidWrite, line, num2str(sum(MS(:,2))));
+            fprintf(fidWrite, '\n');
             
+            line = '<cvParam cvRef="MS" accession="MS:1000504" name="base peak m/z" value="%s" unitCvRef="MS" unitAccession="MS:1000040" unitName="m/z"/>';
+            fprintf(fidWrite, line, num2str(max(MS(:,2))));
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000505" name="base peak intensity" value="0.00000000" unitCvRef="MS" unitAccession="MS:1000131" unitName="number of detector counts"/>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000511" name="ms level" value="1"/>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000527" name="highest observed m/z" value="%s" unitCvRef="MS" unitAccession="MS:1000040" unitName="m/z"/>';
+            fprintf(fidWrite, line, num2str(max(MS(:,1))));
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000528" name="lowest observed m/z" value="%s" unitCvRef="MS" unitAccession="MS:1000040" unitName="m/z"/>';
+            fprintf(fidWrite, line, num2str(min(MS(:,1))));
+            fprintf(fidWrite, '\n');
+            
+            line = '<scanList count="1">';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000795" name="no combination"/>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<scan instrumentConfigurationRef="instrument">';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000016" name="scan start time" value="%s" unitCvRef="UO" unitAccession="UO:0000031" unitName="minute"/>';
+            fprintf(fidWrite, line, num2str(obj.Datasets{dts}.AxisX.Data(ii)));
+            fprintf(fidWrite, '\n');
+            
+            line = '</scan>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '</scanList>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<binaryDataArrayList count="2">';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<binaryDataArray encodedLength="%s">';
+            fprintf(fidWrite, line, num2str(size(mzArray,2)));
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000574" name="zlib compression"/>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000514" name="m/z array" value="" unitCvRef="MS" unitAccession="MS:1000040" unitName="m/z"/>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000523" name="64-bit float"/>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<binary>%s</binary>';
+            fprintf(fidWrite, line, mzArray);
+            fprintf(fidWrite, '\n');
+            
+            line = '</binaryDataArray>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<binaryDataArray encodedLength="%s">';
+            fprintf(fidWrite, line, num2str(size(ItArray,2)));
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000574" name="zlib compression"/>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000515" name="intensity array" value="" unitCvRef="MS" unitAccession="MS:1000131" unitName="number of detector counts"/>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<cvParam cvRef="MS" accession="MS:1000523" name="64-bit float"/>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '<binary>%s</binary>';
+            fprintf(fidWrite, line, ItArray);
+            fprintf(fidWrite, '\n');
+            
+            line = '</binaryDataArray>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '</binaryDataArrayList>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
+            
+            line = '</spectrum>';
+            fprintf(fidWrite, line);
+            fprintf(fidWrite, '\n');
         end
+        fprintf(fidWrite, '</spectrumList>');
+        fprintf(fidWrite, '\n');
+        fprintf(fidWrite, '</run>');
+        fprintf(fidWrite, '\n');
+        fprintf(fidWrite, '</mzML>');
+        fprintf(fidWrite, '\n');
+        
+        if obj.MZMLDump{2}(1:5) == '<inde'
+            fprintf(fidWrite, '</indexedmzML>');
+        end
+        
+        
+        fclose(fidWrite);
+        
     end
 
 
@@ -193,29 +223,26 @@ end
         % and create the options parameter.
         
         % 1- Defaults optional parameters
-        options.FileOut     = '';
-        options.Overwrite   = false;
-        options.FileFormat  = 'mzML';
-        options.XLim        = [0 inf];
-        options.YLim        = [0 inf];
+        options.FolderOut = '';
+        options.FileName = '';
         
         % 2- Decipher varargin and update options when relevamt
         input = @(x) find(strcmpi(varargin,x),1);
         
-        tgtIx = input('fileOut');
-        if ~isempty(tgtIx);
-            options.FileOut = varargin{tgtIx +1};
-        end
-        
-        tgtIx = input('overwrite');
-        if ~isempty(tgtIx);
-            options.Overwrite = true;
-        end
-        
-        tgtIx = input('tLim');
+        tgtIx = input('folder');
         if ~isempty(tgtIx)
-            tLim         = varargin{tgtIx +1};
-            options.XLim = [min(tLim) max(tLim)];
+            options.FolderOut = varargin{tgtIx +1};
+        end
+        
+        tgtIx = input('name');
+        if ~isempty(tgtIx)
+            options.FileName = [varargin{tgtIx +1}, '.mzML'];
+        end
+        
+        tgtIx = input('ext');
+        if ~isempty(tgtIx)
+            ext              = varargin{tgtIx +1};
+            options.FileName = [obj.FileID, '_', ext,  '.mzML'];
         end
         
         tgtIx = input('mzLim');
