@@ -77,7 +77,7 @@ classdef Trace
                 obj.AdiParam    = infoTrc.AdiPrm;
                 
                 % control of data2write
-                if nargin == 1, 
+                if nargin == 1
                     data2write = [];
                
                 end

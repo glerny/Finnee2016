@@ -630,7 +630,7 @@ obj.save;
         end
         
         % 2- Default parameters
-        options.RemSpks = true;
+        options.RemSpks = false;
         options.SpkSz   = 1;
         
         % 3- Decipher varargin

@@ -10,13 +10,55 @@
 
 function dataOut = spikesRemoval(dataIn, spkSz )
 
-if ~(spkSz == 1 ||spkSz == 2 ||spkSz == 3)
-    error('spksSz should be 1, 2 or 3')
-end
+% if ~(spkSz == 1 ||spkSz == 2 ||spkSz == 3)
+%     error('spksSz should be 1, 2 or 3')
+% end
 
 dataOut = dataIn;
 
-if spkSz == 3
+if spkSz >= 10
+    findZeros = find(dataOut(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 10 & diff(findZeros) <= 11);
+    dataOut(ind2null+1, 2) = 0;
+end
+
+if spkSz >= 9
+    findZeros = find(dataOut(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 9 & diff(findZeros) <= 10);
+    dataOut(ind2null+1, 2) = 0;
+end
+
+if spkSz >= 8
+    findZeros = find(dataOut(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 8 & diff(findZeros) <= 9);
+    dataOut(ind2null+1, 2) = 0;
+end
+
+if spkSz >= 7
+    findZeros = find(dataOut(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 7 & diff(findZeros) <= 8);
+    dataOut(ind2null+1, 2) = 0;
+end
+
+if spkSz >= 6
+    findZeros = find(dataOut(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 6 & diff(findZeros) <= 7);
+    dataOut(ind2null+1, 2) = 0;
+end
+
+if spkSz >= 5
+    findZeros = find(dataOut(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 5 & diff(findZeros) <= 6);
+    dataOut(ind2null+1, 2) = 0;
+end
+
+if spkSz >= 4
+    findZeros = find(dataOut(:,2) == 0);
+    ind2null = findZeros(diff(findZeros) > 4 & diff(findZeros) <= 5);
+    dataOut(ind2null+1, 2) = 0;
+end
+
+if spkSz >= 3
     findZeros = find(dataOut(:,2) == 0);
     ind2null = findZeros(diff(findZeros) > 3 & diff(findZeros) <= 4);
     dataOut(ind2null+1, 2) = 0;

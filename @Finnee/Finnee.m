@@ -109,7 +109,7 @@ classdef Finnee
             % *mzLim     Followed by a 2x1 array of numbers
             %            (default [0 inf]). For each scan only kept mz 
             %            values between mzLim(1) and mzLim(2). 
-            % *spikes    Followed by an integer between 0 and 3 (default 1)
+            % *spikes    Followed by an integer between 0 and 10 (default 5)
             %            . (see the method @Finnee\FilterDataset) for
             %            additional information. Remove spikes in every MS 
             %            scans If used, where spikes are any peaks in each
@@ -222,29 +222,29 @@ classdef Finnee
                 options.MaxFileSize = 10000000000;
                 options.XLim        = [0 inf];
                 options.YLim        = [0 inf];
-                options.RemSpks     = true;
-                options.SpkSz       = 1;
+                options.RemSpks     = false;
+                options.SpkSz       = 0;
                 
                 % 2- Decipher varargin and update options when relevamt
                 input = @(x) find(strcmpi(varargin,x),1);
               
                 tgtIx = input('fileIn');
-                if ~isempty(tgtIx);
+                if ~isempty(tgtIx)
                     options.FileIn = varargin{tgtIx +1};
                 end
                 
                 tgtIx = input('folderOut');
-                if ~isempty(tgtIx);
+                if ~isempty(tgtIx)
                     options.FolderOut = varargin{tgtIx +1};
                 end
                 
                 tgtIx = input('fileID');
-                if ~isempty(tgtIx);
+                if ~isempty(tgtIx)
                     options.FileID = varargin{tgtIx +1};
                 end
                 
                 tgtIx = input('overwrite');
-                if ~isempty(tgtIx);
+                if ~isempty(tgtIx)
                     options.Overwrite = true;
                 end  
                 
@@ -265,6 +265,7 @@ classdef Finnee
                     spks = varargin{tgtIx +1};
                     if spks == 0
                         options.RemSpks = false;
+                        options.SpkSz   =  spks;
                     else
                         options.RemSpks = true;
                         options.SpkSz   =  spks;
@@ -519,13 +520,14 @@ classdef Finnee
                                     end
                                     
                                     s = dir(infoDts.Path2Dat{fln});
-                                    if s.bytes > obj.Options.MaxFileSize;
-                                        [~, rndStr]           = fileparts(tempname);
-                                        fln                   = fln + 1;
-                                        infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
-                                        infoScn.Path2Dat      = infoDts.Path2Dat{fln};
+                                    if ~isempty(s)
+                                        if s.bytes > obj.Options.MaxFileSize
+                                            [~, rndStr]           = fileparts(tempname);
+                                            fln                   = fln + 1;
+                                            infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
+                                            infoScn.Path2Dat      = infoDts.Path2Dat{fln};
+                                        end
                                     end
-                                    
                                     %% FOR CENTROID MS SCANS
                                 elseif strcmp(infoDts.Format, 'centroid')  && doRecord
                                     
