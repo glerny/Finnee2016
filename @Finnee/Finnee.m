@@ -79,6 +79,7 @@ classdef Finnee
                        % method
         Path2Fin       % The paths to the .fin folder
         MZMLDump       % Some general information from the mzML file
+        
     end
     
     methods
@@ -481,7 +482,7 @@ classdef Finnee
                                     infoScn.TT        = 'PRF';
                                     infoScn.P2Fin     = obj.Path2Fin;
                                     infoScn.Path2Dat  = infoDts.Path2Dat{fln};
-                                    infoScn.Precision = 'single';
+                                    infoScn.Precision = 'double';
                                     infoScn.Loc       = 'inFile';
                                     infoScn.AdiPrm    = {};
                                     
@@ -493,9 +494,17 @@ classdef Finnee
                                     end
                                         
                                     % Filter spikes if needed
+                                    if length(unique(MS(:,1))) ~= length(MS(:,1))
+                                        disp('tt')
+                                    end
+                                    
                                     if ~isempty(MS) && obj.Options.RemSpks
                                         spkSz = obj.Options.SpkSz;
                                         MS    = spikesRemoval(MS, spkSz );
+                                    end
+                                    
+                                    if length(unique(MS(:,1))) ~= length(MS(:,1))
+                                        disp('tt')
                                     end
                                     
                                     % reduced trailing zero in excess
@@ -563,7 +572,7 @@ classdef Finnee
                                     end
                                     
                                     s = dir(infoDts.Path2Dat{fln});
-                                    if s.bytes > obj.Options.MaxFileSize;
+                                    if s.bytes > obj.Options.MaxFileSize
                                         [~, rndStr]           = fileparts(tempname);
                                         fln                   = fln + 1;
                                         infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
@@ -700,6 +709,72 @@ classdef Finnee
             % done automaticall with most methods.
             %
             myFinnee = obj;
+            save(fullfile(obj.Path2Fin, 'myFinnee.mat'), 'myFinnee')
+        end
+        
+        function obj = newDirName(obj)
+            %newFolder = uigetdir();
+            newFolder = pwd;
+            obj.Path2Fin = newFolder;
+            for ii = 1:length(obj.Datasets)
+                obj.Datasets{ii}.Path2Fin = newFolder;
+                Path2Dat = obj.Datasets{ii}.Path2Dat;
+                for jj = 1:length(Path2Dat)
+                    [~, name, ext] = fileparts(Path2Dat{jj});
+                    obj.Datasets{ii}.Path2Dat{jj} = ...
+                        fullfile(newFolder, name, ext);
+                end
+                
+                obj.Datasets{ii}.BPP.Path2Fin = newFolder;
+                Path2Dat = obj.Datasets{ii}.BPP.Path2Dat;
+                [~, name, ext] = fileparts(Path2Dat);
+                obj.Datasets{ii}.BPP.Path2Dat = ...
+                    fullfile(newFolder, name, ext);
+                
+                obj.Datasets{ii}.TIP.Path2Fin = newFolder;
+                Path2Dat = obj.Datasets{ii}.TIP.Path2Dat;
+                [~, name, ext] = fileparts(Path2Dat);
+                obj.Datasets{ii}.TIP.Path2Dat = ...
+                    fullfile(newFolder, name, ext);
+                
+                obj.Datasets{ii}.TIS.Path2Fin = newFolder;
+                Path2Dat = obj.Datasets{ii}.TIS.Path2Dat;
+                [~, name, ext] = fileparts(Path2Dat);
+                obj.Datasets{ii}.TIS.Path2Dat = ...
+                    fullfile(newFolder, name, ext);
+                
+                obj.Datasets{ii}.FIS.Path2Fin = newFolder;
+                Path2Dat = obj.Datasets{ii}.FIS.Path2Dat;
+                [~, name, ext] = fileparts(Path2Dat);
+                obj.Datasets{ii}.FIS.Path2Dat = ...
+                    fullfile(newFolder, name, ext);
+                
+                obj.Datasets{ii}.BIS.Path2Fin = newFolder;
+                Path2Dat = obj.Datasets{ii}.BIS.Path2Dat;
+                [~, name, ext] = fileparts(Path2Dat);
+                obj.Datasets{ii}.BIS.Path2Dat = ...
+                    fullfile(newFolder, name, ext);
+                
+                if ~isempty(obj.Datasets{ii}.LAST.Data)
+                    obj.Datasets{ii}.LAST.Path2Fin = newFolder;
+                    Path2Dat = obj.Datasets{ii}.LAST.Path2Dat;
+                    [~, name, ext] = fileparts(Path2Dat);
+                    obj.Datasets{ii}.LAST.Path2Dat = ...
+                        fullfile(newFolder, name, ext);
+                end
+                
+                for jj = 1:length(obj.Datasets{ii}.ListOfScans)
+                    obj.Datasets{ii}.ListOfScans{jj}.Path2Fin = ...
+                        newFolder;
+                    Path2Dat = obj.Datasets{ii}.ListOfScans{jj}.Path2Dat;
+                    [~, name, ext] = fileparts(Path2Dat);
+                    obj.Datasets{ii}.ListOfScans{jj}.Path2Dat = ...
+                        fullfile(newFolder, name, ext);
+                end
+            end
+            
+             % 3- Save and done
+            myFinnee = obj; %#ok<*NASGU>
             save(fullfile(obj.Path2Fin, 'myFinnee.mat'), 'myFinnee')
         end
     end

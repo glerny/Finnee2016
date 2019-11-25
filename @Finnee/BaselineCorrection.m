@@ -105,7 +105,7 @@ end
 
 % 4- Trim the time axis for a more accurate baseline correction
 if isempty(options.XLim)
-    options.XLim(1) = 1;
+    options.XLim(1) = 0;
     options.XLim(2) = length(dtsIn.AxisX.Data);
 end
 
@@ -150,9 +150,6 @@ for ii = 1:size(corProf, 1)
             [z, bslPts] = doArPLS(prf(IdnZeros, 2), lambda, ratio);
             
         case 'ArPLS2'
-
-            
-            
             lambda = str2double(MtU{2});
             [z, bslPts] = doArPLS2(prf(IdnZeros, 2), lambda);
     end
@@ -160,11 +157,10 @@ for ii = 1:size(corProf, 1)
     provPrf      = prf(IdnZeros, 2);
     noise(ii)    = 2*1.96*std(provPrf(bslPts) - z(bslPts));
     Yc           = prf(:,2);
+    Yc(Yc < 0)   = 0;
     Yc(IdnZeros) = Yc(IdnZeros) - z ;
-    
-    %Yc                    = round(Yc);
-    %Yc(Yc < 0)            = 0;
     corProf(ii, ind2keep) = Yc;
+    
 end
 try close(h), catch, end
 
@@ -187,8 +183,6 @@ m                   = length(obj.Datasets)+1;
 P2PNoise            = dtsIn.AxisY.Data;
 P2PNoise(IndMax,2)  = noise;
 noise               = sort(noise);
-% minNoise            = mean(noise(1:round(0.1*length(noise))));
-% P2PNoise(P2PNoise(:,2) < minNoise ,2)  = minNoise;
 
 
 infoDts.Title = 'Baseline corrected dataset';
@@ -206,6 +200,7 @@ for ii = 1:size(allProfiles, 1)
     Scanii            = dtsIn.xpend(dtsIn.ListOfScans{ii});
     XMS               = Scanii.Data;
     XMS(IndMax,2)     = corProf(:, ii);
+    XMS(:,2) = round(XMS(:,2));
     XMS(XMS(:,2) < 0, 2)= 0;
     
     % find and remove spikes
@@ -217,7 +212,7 @@ for ii = 1:size(allProfiles, 1)
     infoScn           = Scanii.InfoTrc;
     infoScn.FT        = log2add;
     infoScn.Loc       = 'inFile';
-    infoScn.Precision = 'single';
+    infoScn.Precision = 'double';
     infoScn.Title     = ['Profile scan #', num2str(ii)];
     infoScn.Path2Dat  = infoDts.Path2Dat{fln};
     AxisMZ(:,2)       = AxisMZ(:,2) + XMS(:,2);
@@ -243,7 +238,7 @@ for ii = 1:size(allProfiles, 1)
     
     s = dir(infoDts.Path2Dat{fln});
     if isempty(s), continue, end
-    if s.bytes > obj.Options.MaxFileSize;
+    if s.bytes > obj.Options.MaxFileSize
         [~, rndStr]           = fileparts(tempname);
         fln                   = fln + 1;
     end
@@ -254,9 +249,8 @@ try close(h), catch, end
 % creating Dataset
 infoAxis           = dtsIn.AxisX.InfoAxis;
 infoAxis.Loc       = 'inFile';
-infoAxis.Precision = 'single';
+infoAxis.Precision = 'double';
 infoAxis.Path2Dat  = infoDts.Path2Dat{fln};
-AxisMZ             =  trailRem(AxisMZ, 2);
 
 if isempty(allProfiles)
     infoDts.AxisX  = Axis(infoAxis);
@@ -266,7 +260,7 @@ end
 
 infoAxis           = dtsIn.AxisY.InfoAxis;
 infoAxis.Loc       = 'inFile';
-infoAxis.Precision = 'single';
+infoAxis.Precision = 'double';
 infoAxis.Path2Dat  = infoDts.Path2Dat{fln};
 if isempty(AxisMZ)
     infoDts.AxisY  = Axis(infoAxis);
@@ -278,7 +272,7 @@ infoDts.Log = [log2add, '|', infoDts.Log];
 infoPrf.AxisX      = Axis(dtsIn.AxisX.InfoAxis);
 infoPrf.AxisY      = Axis(dtsIn.AxisZ.InfoAxis);
 infoPrf.Loc       = 'inFile';
-infoPrf.Precision = 'single';
+infoPrf.Precision = 'double';
 infoPrf.Path2Dat  = infoDts.Path2Dat{fln};
 infoPrf.P2Fin     = obj.Path2Fin;
 infoPrf.FT        = infoDts.Log;

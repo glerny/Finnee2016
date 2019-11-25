@@ -178,15 +178,19 @@ classdef Axis
         function  obj = set.Label(obj, value)
             % standardised the labels string (need to be improved)
             
-            switch lower(value)
-                case {'time'}
-                    obj.Label = 'Time';
-                    
-                case {'mass'}
-                    obj.Label = 'Mass';
-                    
-                case {'intensity'}
-                    obj.Label = 'Intensity';
+            if isempty(value)
+                obj.Label = '';
+            else
+                switch lower(value)
+                    case {'time'}
+                        obj.Label = 'Time';
+                        
+                    case {'mass'}
+                        obj.Label = 'Mass';
+                        
+                    case {'intensity'}
+                        obj.Label = 'Intensity';
+                end
             end
         end
         

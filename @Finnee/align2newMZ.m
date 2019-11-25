@@ -72,7 +72,7 @@ if options.MstAxis
     MZlim(1) = min( str2double(M4MA{1}), str2double(M4MA{2}));
     MZlim(2) = max( str2double(M4MA{1}), str2double(M4MA{2}));
     
-    [newAxis, r2, data4axis] = dtsIn.ListOfScans{Id4MA}.extrapolMZ(2, MZlim);
+    [newAxis, ~, ~] = dtsIn.ListOfScans{Id4MA}.extrapolMZ(2, MZlim);
 end
 
 % Initiation of profiles
@@ -103,27 +103,17 @@ for ii = 1:length(dtsIn.AxisX.Data)
     
     if ~isempty(Scanii.Data)
         
-        try
-            Id2Keep = Scanii.Data(:,1) >= newAxis(1) & Scanii.Data(:,1) <= newAxis(end);
-        catch
-            disp('wtf')
-        end
+        Id2Keep = Scanii.Data(:,1) >= newAxis(1) & Scanii.Data(:,1) <= newAxis(end);
         
         XMS = newAxis;
         XY  = Scanii.Data(Id2Keep, :);
-        [~, ia, ~] = unique(XY(:,1));
-        XY  = XY(ia, :);
         
-        try
-            XMS(:,2) =  interp1(XY(:,1), XY(:,2), XMS(:,1),...
-                options.mth4interp1);
-        catch
-            [C, ia, ic] = unique(Scanii.Data(Id2Keep,1));
-            disp('wtf')
-        end
+        vq =  interp1(XY(:,1), XY(:,2), XMS(:,1),...
+            options.mth4interp1);
+        XMS(:,2) = vq;
         XMS(isnan(XMS(:,2)), 2) = 0;
-        % XMS(:,2) = round(XMS(:,2));
-        % XMS(XMS(:,2) <0, 2) = 0;
+        XMS(:,2) = round(XMS(:,2));
+        XMS(XMS(:,2) <0, 2) = 0;
         
         % Filter spikes if needed
         if obj.Options.RemSpks
@@ -148,7 +138,7 @@ for ii = 1:length(dtsIn.AxisX.Data)
     infoScn.FT        = log2add;
     infoScn.Path2Dat  = infoDts.Path2Dat{fln};
     infoScn.Loc       = 'inFile';
-    infoScn.Precision = 'single';
+    infoScn.Precision = 'double';
     infoScn.TT        = 'PRF';
     infoScn.Title     = ['Profile scan #', num2str(ii)];
     infoScn.AdiPrm    = {};
@@ -171,7 +161,7 @@ for ii = 1:length(dtsIn.AxisX.Data)
     % check the size of the dat file
     s = dir(infoDts.Path2Dat{fln});
     if ~isempty(s)
-        if s.bytes > obj.Options.MaxFileSize;
+        if s.bytes > obj.Options.MaxFileSize
             [~, rndStr]           = fileparts(tempname);
             fln                   = fln + 1;
             infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
@@ -183,14 +173,11 @@ try close(h), catch, end
 
 
 infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
-% reduced trailing zero in AxisMZ to
-AxisMZ        =  trailRem(AxisMZ, 2);
-
 
 % 3- Create the new dataset and save
 infoAxis           = dtsIn.AxisX.InfoAxis;
 infoAxis.Loc       = 'inFile';
-infoAxis.Precision = 'single';
+infoAxis.Precision = 'double';
 infoAxis.Path2Dat  = infoDts.Path2Dat{fln};
 if isempty(allProfiles)
     infoDts.AxisX  = Axis(infoAxis);
@@ -200,7 +187,7 @@ end
 
 infoAxis           = dtsIn.AxisY.InfoAxis;
 infoAxis.Loc       = 'inFile';
-infoAxis.Precision = 'single';
+infoAxis.Precision = 'double';
 infoAxis.Path2Dat  = infoDts.Path2Dat{fln};
 if isempty(AxisMZ)
     infoDts.AxisY  = Axis(infoAxis);
@@ -210,14 +197,14 @@ end
 
 infoAxis           = dtsIn.AxisY.InfoAxis;
 infoAxis.Loc       = 'inFile';
-infoAxis.Precision = 'single';
+infoAxis.Precision = 'double';
 infoAxis.Path2Dat  = infoDts.Path2Dat{fln};
 masterMZAxis       = Axis(infoAxis, newAxis);
 
 infoPrf.AxisX      = Axis(dtsIn.AxisX.InfoAxis);
 infoPrf.AxisY      = Axis(dtsIn.AxisZ.InfoAxis);
 infoPrf.Loc       = 'inFile';
-infoPrf.Precision = 'single';
+infoPrf.Precision = 'double';
 infoPrf.Path2Dat  = infoDts.Path2Dat{fln};
 infoPrf.P2Fin     = obj.Path2Fin;
 infoPrf.FT        = infoDts.Log;

@@ -140,13 +140,18 @@ classdef Dataset
                 error('xpend is only possible with profile''s type dataset')
             end
             infoMS = MS.InfoTrc;
-            
+                
             XMS(:,1) = obj.AxisY.Data;
             if isempty(MS.Data)
                 XMS(:,2) = 0;
             else
-                [~, loc] = ismember(MS.Data(:,1), XMS(:,1));
-                XMS(loc, 2) = MS.Data(:, 2);
+                 [sharedVals,idxsIntoA] = intersect(XMS(:,1), MS.Data(:,1),'stable');
+%                 try
+%                 [~, loc] = ismember(MS.Data(:,1), XMS(:,1));
+%                 XMS(loc(loc ~= 0), 2) = MS.Data(loc~=0, 2);
+%                 catch
+%                     disp('?')
+%                 end
             end
             
             infoMS.Title = ['XMS- ', infoMS.Title];

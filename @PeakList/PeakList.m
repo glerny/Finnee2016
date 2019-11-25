@@ -32,10 +32,13 @@ classdef PeakList
         AxisY
         AxisZ
         Path2Pkl    % where to save
+        Noise
+        Ntm         = 0;
+        Nmz         = 0;      
     end
     
     methods
-        function obj = PeakList(dtsIn, prm1, prm2, prm3)
+        function obj = PeakList(dtsIn, prm1, prm2, prm3, prm4)
             % creator method will group as PIP any series of points that
             % does not differ in their m/z by more than prm2. PIP will be
             % recorded only if it contain at least prm3 whith at least
@@ -54,6 +57,7 @@ classdef PeakList
                 obj.AxisZ    = {};
                 obj.Path2Pkl = '';
                 obj.p4norm   = {};
+                obj.Noise    = {};
                 
             elseif isa(dtsIn, 'Dataset')
                 
@@ -73,6 +77,7 @@ classdef PeakList
                 obj.Path2Fin{1}     = dtsIn.Path2Fin;
                 obj.Log2crea{1}     = dtsIn.Log;
                 obj.p4norm          = {};
+                obj.Noise           = dtsIn.Noise;
                 
                 InfoAxis     = dtsIn.AxisX.InfoAxis;
                 InfoAxis.Loc = 'inAxis';
@@ -94,7 +99,7 @@ classdef PeakList
                 LoPts(LoPts(:,1) == 0, :) = [];
                 obj.LstPIP{1}    = getPIP(LoPts, prm2, prm1, prm3, X, obj.options.InfoDts);
                 obj.FOM{1}.Headings = {'Id', 'IntMax', 'Tm@IM', 'M0', 'M1',...
-                    'M2', 'M3', 'mean(m/z)', 'std(m/z)', 'Acc. Mass'};
+                    'M2', 'M3', 'mean(m/z)', 'std(m/z)', 'Acc. Mass', 'DetInt', 'S/N'};
                 
                 BPP      = obj.AxisX{1}.Data;
                 BPP(:,2) = 0;
@@ -102,7 +107,10 @@ classdef PeakList
                 TIP(:,2) = 0;
                 
                 for ii = 1:length(obj.LstPIP{1} )
-                    obj.FOM{1}.Data(ii, :) = [ii, obj.LstPIP{1}{ii}.FOM];
+                    obj.FOM{1}.Data(ii, 1:11) = [ii, obj.LstPIP{1}{ii}.FOM];
+                    IdN = findCloser(obj.LstPIP{1}{ii}.FOM(7),obj.Noise.Data(:,1));
+                    obj.FOM{1}.Data(ii, 12) = obj.FOM{1}.Data(ii, 11)...
+                        /max(obj.Noise.Data(IdN, 2), 15);
                     IdS = obj.LstPIP{1}{ii}.IdS;
                     y   = obj.LstPIP{1}{ii}.y;
                     IdE = IdS + size(y, 1) - 1;
@@ -131,7 +139,7 @@ classdef PeakList
         function save(obj)
             %% DESCRIPTION
             myPeakList = obj; %#ok<*NASGU>
-            save(fullfile(obj.Path2PkL, 'myPeakList.mat'), 'myPeakList')
+            save(fullfile(obj.Path2Pkl, 'myPeakList.mat'), 'myPeakList')
         end
         
     end

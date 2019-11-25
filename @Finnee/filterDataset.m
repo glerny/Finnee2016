@@ -21,7 +21,7 @@
 %           reconstitued a small matrix, centered around the point of interest
 %           and of size 2*pm1+1 in the time dimension and 2*pm2+1 in the
 %           m/z dimension. The center point intensity will be set to zero
-%           if no values within the matrix is higher than pm3. 
+%           if no values within the matrix is higher than pm3.
 %       + 'RemoveNoise:pm1:pm2:pm3:pm4'
 %           Use to remove background noise. For each points, will
 %           reconstitued a small matrix, centered around the point of interest
@@ -83,7 +83,7 @@ switch MtU{1}
             infoScn.FT        = Log{1};
             infoScn.Path2Dat  = infoDts.Path2Dat{fln};
             infoScn.Loc       = 'inFile';
-            infoScn.Precision = 'single';
+            infoScn.Precision = 'doublr';
             AxisMZ(:,2)        = AxisMZ(:,2) + XMS.Data(:,2);
             iNZ = XMS.Data(:,2) > 0;
             AxisMZ(iNZ, 3)     = AxisMZ(iNZ, 3) + 1;
@@ -138,12 +138,12 @@ switch MtU{1}
         h = waitbar(0,'processing scans');
         for ii = 1:length(dtsIn.ListOfScans)
             waitbar(ii/length(dtsIn.ListOfScans))
-			
-			TM = [];
-			for jj = -MtU{3}:1:MtU{3}
-				TM = [TM, circshift(S2NMat(:, MtU{2}+1), [jj, 0])]; %#ok<*AGROW>
+            
+            TM = [];
+            for jj = -MtU{3}:1:MtU{3}
+                TM = [TM, circshift(S2NMat(:, MtU{2}+1), [jj, 0])]; %#ok<*AGROW>
             end
-			ind2null = max(TM, [], 2) < MtU{4} & max(S2NMat, [], 2) < MtU{4};
+            ind2null = max(TM, [], 2) < MtU{4} & max(S2NMat, [], 2) < MtU{4};
             infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
             MS2Cor    = AxisMZ(:,1);
             Scanii = dtsIn.ListOfScans{ii};
@@ -204,7 +204,7 @@ switch MtU{1}
             end
             scan2add = [ZB(:,1); S2A(:,2); ZB(:,1)];
             S2NMat   = [S2NMat(:, 2:end), scan2add];
-
+            
             
             s = dir(infoDts.Path2Dat{fln});
             if isempty(s), continue, end
@@ -216,7 +216,135 @@ switch MtU{1}
             end
         end
         
-        case 'remNoise'
+    case 'remNoise'
+        %% REMNOISE HERE
+        infoDts.Title = 'Noise corrected dataset';
+        infoDts.Log   = ['PRF=', num2str(m), ' NCR=', options.method,...
+            '|', infoDts.Log];
+        Noise   =  obj.Datasets{dts}.AddInfo.Peak2PeakNoise;
+        nd = Noise.Data;
+        
+        ZerosNoise = MtU{5};
+        if ZerosNoise(1) == '%'
+            val = max(1, str2double(ZerosNoise(2:end)));
+            minNoise = round(mean(nd(nd(:,2) <= ...
+                prctile(nd(nd(:,2) > 0, 2), val) & nd(:,2) > 0, 2)))
+        else
+            val = str2num(ZerosNoise);
+            minNoise = val;
+        end
+        nd(nd(:,2) <= minNoise, 2) = minNoise;
+        
+        S2NMat  = zeros(size(AxisMZ, 1), 2*MtU{2}+1);
+        for ii  = 1:MtU{2}+1
+            Scanii  = dtsIn.ListOfScans{ii};
+            if ~isempty(Scanii.Data)
+                [~, loc] = ismember(Scanii.Data(:,1), nd(:,1));
+                nnMS = Scanii.Data(:,2)./nd(loc,2);
+                [~, loc] = ismember(Scanii.Data(:,1), AxisMZ(:,1));
+                IZ = loc~= 0;
+                S2NMat(loc(IZ), MtU{2}+ii)  =  nnMS(IZ);
+            else
+                S2NMat(:, MtU{2}+ii)  = 0;
+            end
+        end
+        
+        h = waitbar(0,'processing scans');
+        for ii = 1:length(dtsIn.ListOfScans)
+            waitbar(ii/length(dtsIn.ListOfScans))
+            
+            % 1. Check in line
+            ind2null = max(S2NMat, [], 2) < MtU{4};
+            
+            % 2. Check in line and column
+            S2NMat2 = S2NMat(:, MtU{2}+1);
+            for jj = 1:MtU{3}
+                S2NMat2 = [[0; S2NMat2(1:end-1, 1)], S2NMat2];
+            end
+            
+            for jj = 1:MtU{3}
+                S2NMat2 = [S2NMat2, [S2NMat2(2:end, end); 0]];
+            end
+            
+             % 1. Check in line
+            ind2null = max(S2NMat, [], 2) < MtU{4} & max(S2NMat2, [], 2) < MtU{4};
+            S2NMat(ind2null, MtU{2}+1) = 0;
+                
+            infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
+            MS2Cor    = AxisMZ(:,1);
+            Scanii = dtsIn.ListOfScans{ii};
+            
+            if ~isempty(Scanii.Data)
+                [~, loc] = ismember(Scanii.Data(:,1), MS2Cor(:,1));
+                IZ = loc~= 0;
+                MS2Cor(loc(IZ), 2) = Scanii.Data(IZ,2);
+                MS2Cor(ind2null, 2) = 0;
+            else
+                MS2Cor(:,2) = 0;
+            end
+            
+            
+            % find and remove spikes
+            if options.RemSpks
+                spkSz  = options.SpkSz;
+                MS2Cor = spikesRemoval(MS2Cor, spkSz );
+            end
+            
+            infoScn           = Scanii.InfoTrc;
+            [~, partial]      = decipherLog(infoDts.Log);
+            
+            infoScn.FT        = partial{1};
+            infoScn.Path2Dat  = infoDts.Path2Dat{fln};
+            infoScn.Loc       = 'inFile';
+            infoScn.Precision = 'double';
+            AxisMZ(:,2)       = AxisMZ(:,2) + MS2Cor(:,2);
+            iNZ = MS2Cor(:,2) > 0;
+            AxisMZ(iNZ, 3)    = AxisMZ(iNZ, 3) + 1;
+            AxisMZ(:,4)       = max([AxisMZ(:,4), MS2Cor(:,2)], [], 2);
+            allProfiles(ii,2) = sum(MS2Cor(:,2));
+            allProfiles(ii,3) = max(MS2Cor(:,2));
+            
+            % reduced trailing zero in excess
+            MS2Cor = trailRem(MS2Cor, 2);
+            
+            % recorded each scans
+            if isempty(MS2Cor)
+                infoDts.ListOfScans{ii} = Trace(infoScn);
+            else
+                infoDts.ListOfScans{ii} = Trace(infoScn, MS2Cor);
+            end
+            
+            % Load the  next scan
+            if ii+MtU{2}+1 > length(dtsIn.ListOfScans)
+                S2A  = AxisMZ(:,1);
+                S2A(:, 2) = 0;
+            else
+                scan2add = dtsIn.ListOfScans{ii+MtU{2}+1};
+                S2A  = AxisMZ(:,1);
+                S2A(:, 2) = 0;
+                if ~isempty(scan2add.Data)
+                    [~, loc] = ismember(scan2add.Data(:,1), nd(:,1));
+                    nnMS = scan2add.Data(:,2)./nd(loc,2);
+                    [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
+                    IZ = loc~= 0;
+                    S2A(loc(IZ), 2) = nnMS(IZ);
+                end
+            end
+            
+            S2NMat   = [S2NMat(:, 2:end), S2A(:, 2)];
+            
+            
+            s = dir(infoDts.Path2Dat{fln});
+            if isempty(s), continue, end
+            if s.bytes > obj.Options.MaxFileSize
+                [~, rndStr]           = fileparts(tempname);
+                fln                   = fln + 1;
+                infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
+                infoScn.Path2Dat      = infoDts.Path2Dat{fln};
+            end
+        end
+        
+    case 'remNoiseOld'
         %% REMNOISE HERE
         infoDts.Title = 'Noise corrected dataset';
         infoDts.Log   = ['PRF=', num2str(m), ' NCR=', options.method,...
@@ -254,12 +382,13 @@ switch MtU{1}
         h = waitbar(0,'processing scans');
         for ii = 1:length(dtsIn.ListOfScans)
             waitbar(ii/length(dtsIn.ListOfScans))
-			
-			TM = [];
-			for jj = -MtU{3}:1:MtU{3}
-				TM = [TM, circshift(S2NMat(:, MtU{2}+1), [jj, 0])]; %#ok<*AGROW>
+            
+            
+            TM = [];
+            for jj = -MtU{3}:1:MtU{3}
+                TM = [TM, circshift(S2NMat(:, MtU{2}+1), [jj, 0])]; %#ok<*AGROW>
             end
-			ind2null = max(TM, [], 2) < MtU{4} & max(S2NMat, [], 2) < MtU{4};
+            ind2null = max(TM, [], 2) < MtU{4} & max(S2NMat, [], 2) < MtU{4};
             infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
             MS2Cor    = AxisMZ(:,1);
             Scanii = dtsIn.ListOfScans{ii};
@@ -317,13 +446,13 @@ switch MtU{1}
                     [~, loc] = ismember(scan2add.Data(:,1), nd(:,1));
                     nnMS = scan2add.Data(:,2)./nd(loc,2);
                     [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
-                IZ = loc~= 0;
+                    IZ = loc~= 0;
                     S2A(loc(IZ), 2) = nnMS(IZ);
                 end
             end
             scan2add = [ZB(:,1); S2A(:,2); ZB(:,1)];
             S2NMat   = [S2NMat(:, 2:end), scan2add];
-
+            
             
             s = dir(infoDts.Path2Dat{fln});
             if isempty(s), continue, end
@@ -333,6 +462,148 @@ switch MtU{1}
                 infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
                 infoScn.Path2Dat      = infoDts.Path2Dat{fln};
             end
+        end
+        
+        
+    case 'RemoveSpikestm'
+        %% REMOVE SPIKES time direction
+        infoDts.Title = 'RemoveSpikestm'; %%% One d SGolay through time, what about 2D?
+        infoDts.Log   = ['PRF=', num2str(m), ' SGF=', options.method,...
+            '|', infoDts.Log];
+        infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
+        
+        SGFMat  = zeros(size(AxisMZ, 1), MtU{2}+2);
+        for ii  = 1:MtU{2}
+            Scanii  = dtsIn.ListOfScans{ii};
+            if ~isempty(Scanii.Data)
+                [~, loc] = ismember(Scanii.Data(:,1), AxisMZ(:,1));
+                SGFMat(loc, ii +1)  =  Scanii.Data(:,2);
+            else
+                SGFMat(:,ii + 1)  = 0;
+            end
+        end
+        
+        h = waitbar(0,'processing scans');
+        for jj =  MtU{2}+1:length(dtsIn.ListOfScans)
+            ii = jj - MtU{2};
+            waitbar(ii/length(dtsIn.ListOfScans))
+            
+            % Load the  next scan
+            
+            Scanii  = dtsIn.ListOfScans{jj};
+            if ~isempty(Scanii.Data)
+                [~, loc] = ismember(Scanii.Data(:,1), AxisMZ(:,1));
+                SGFMat(loc, end)  =  Scanii.Data(:,2);
+            else
+                SGFMat(:, end)  = 0;
+            end
+            
+            test = SGFMat == 0;
+            idek = false(size(test,1), 1);
+            for kk =3:size(test, 2)
+                idek = idek |(test(:,1) & test(:,kk));
+            end
+            SGFMat(idek, 2) = 0;
+            MS2Cor      = AxisMZ(:,1);
+            MS2Cor(:,2) = SGFMat(:,2);
+            
+            if options.RemSpks
+                spkSz  = options.SpkSz;
+                MS2Cor = spikesRemoval(MS2Cor, spkSz );
+            end
+            
+            infoScn           = Scanii.InfoTrc;
+            [~, partial]      = decipherLog(infoDts.Log);
+            
+            infoScn.FT        = partial{1};
+            infoScn.Path2Dat  = infoDts.Path2Dat{fln};
+            infoScn.Loc       = 'inFile';
+            infoScn.Precision = 'single';
+            AxisMZ(:,2)       = AxisMZ(:,2) + MS2Cor(:,2);
+            iNZ = MS2Cor(:,2) > 0;
+            AxisMZ(iNZ, 3)    = AxisMZ(iNZ, 3) + 1;
+            AxisMZ(:,4)       = max([AxisMZ(:,4), MS2Cor(:,2)], [], 2);
+            allProfiles(ii,2) = sum(MS2Cor(:,2));
+            allProfiles(ii,3) = max(MS2Cor(:,2));
+            
+            % reduced trailing zero in excess
+            MS2Cor = trailRem(MS2Cor, 2);
+            
+            % recorded each scans
+            if isempty(MS2Cor)
+                infoDts.ListOfScans{ii} = Trace(infoScn);
+            else
+                infoDts.ListOfScans{ii} = Trace(infoScn, MS2Cor);
+            end
+            
+            
+            s = dir(infoDts.Path2Dat{fln});
+            if isempty(s), continue, end
+            if s.bytes > obj.Options.MaxFileSize
+                [~, rndStr]           = fileparts(tempname);
+                fln                   = fln + 1;
+                infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
+                infoScn.Path2Dat      = infoDts.Path2Dat{fln};
+            end
+            SGFMat = SGFMat(:, 2:end);
+            SGFMat(:, end+ 1) = 0;
+        end
+        
+        for jj =  length(dtsIn.ListOfScans):length(dtsIn.ListOfScans) +MtU{2}
+            ii = jj - MtU{2};
+            waitbar(ii/length(dtsIn.ListOfScans))
+            
+            SGFMat(:, end)  = 0;
+            
+            test = SGFMat == 0;
+            idek = false(size(test,1), 1);
+            for kk =3:size(test, 2)
+                idek = idek |(test(:,1) & test(:,kk));
+            end
+            SGFMat(idek, 2) = 0;
+            MS2Cor      = AxisMZ(:,1);
+            MS2Cor(:,2) = SGFMat(:,2);
+            
+            if options.RemSpks
+                spkSz  = options.SpkSz;
+                MS2Cor = spikesRemoval(MS2Cor, spkSz );
+            end
+            
+            infoScn           = Scanii.InfoTrc;
+            [~, partial]      = decipherLog(infoDts.Log);
+            
+            infoScn.FT        = partial{1};
+            infoScn.Path2Dat  = infoDts.Path2Dat{fln};
+            infoScn.Loc       = 'inFile';
+            infoScn.Precision = 'single';
+            AxisMZ(:,2)       = AxisMZ(:,2) + MS2Cor(:,2);
+            iNZ = MS2Cor(:,2) > 0;
+            AxisMZ(iNZ, 3)    = AxisMZ(iNZ, 3) + 1;
+            AxisMZ(:,4)       = max([AxisMZ(:,4), MS2Cor(:,2)], [], 2);
+            allProfiles(ii,2) = sum(MS2Cor(:,2));
+            allProfiles(ii,3) = max(MS2Cor(:,2));
+            
+            % reduced trailing zero in excess
+            MS2Cor = trailRem(MS2Cor, 2);
+            
+            % recorded each scans
+            if isempty(MS2Cor)
+                infoDts.ListOfScans{ii} = Trace(infoScn);
+            else
+                infoDts.ListOfScans{ii} = Trace(infoScn, MS2Cor);
+            end
+            
+            
+            s = dir(infoDts.Path2Dat{fln});
+            if isempty(s), continue, end
+            if s.bytes > obj.Options.MaxFileSize
+                [~, rndStr]           = fileparts(tempname);
+                fln                   = fln + 1;
+                infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
+                infoScn.Path2Dat      = infoDts.Path2Dat{fln};
+            end
+            SGFMat = SGFMat(:, 2:end);
+            SGFMat(:, end+ 1) = 0;
         end
         
     case 'SGolay'
@@ -365,19 +636,19 @@ switch MtU{1}
             MS2Cor(:,2) = SGD(:, (MtU{2}+1)/2);%round(SGD(:, (MtU{2}+1)/2));
             
             % Load the  next scan
-                if ii+(MtU{2}-1)/2 <= length(dtsIn.ListOfScans)
-                    scan2add = dtsIn.ListOfScans{ii+(MtU{2}-1)/2};
-                    if ~isempty(scan2add.Data)
-                        [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
-                        SGFMat(loc, end+1)  =  scan2add.Data(:,2);
-                    else
-                        SGFMat(:,end+1)  = 0;
-                    end
+            if ii+(MtU{2}-1)/2 <= length(dtsIn.ListOfScans)
+                scan2add = dtsIn.ListOfScans{ii+(MtU{2}-1)/2};
+                if ~isempty(scan2add.Data)
+                    [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
+                    SGFMat(loc, end+1)  =  scan2add.Data(:,2);
                 else
                     SGFMat(:,end+1)  = 0;
                 end
-                SGFMat   =  SGFMat(:, 2:end);
-                
+            else
+                SGFMat(:,end+1)  = 0;
+            end
+            SGFMat   =  SGFMat(:, 2:end);
+            
             if dt2keep(ii)
                 % find and remove spikes
                 
@@ -433,7 +704,7 @@ try close(h), catch, end
 
 % creating Dataset
 % reduced trailing zero in AxisMZ to
-AxisMZ        = trailRem(AxisMZ, 2);
+% AxisMZ        = trailRem(AxisMZ, 2);
 
 infoAxis           = dtsIn.AxisX.InfoAxis;
 infoAxis.Loc       = 'inFile';
@@ -536,6 +807,23 @@ obj.save;
                 end
                 options.method = ['RemoveSpikes:', num2str(MtU{2})];
                 
+                
+            case 'removespikestm'
+                % Check Dataset format
+                if ~strcmp(infoDts.Format, 'profile')
+                    error('The original dataset should be in profile mode, dataset %i is in %f mode',...
+                        dts, infoDts.Format);
+                end
+                
+                % check parameter for method
+                MtU{1} = 'RemoveSpikestm';
+                if length(MtU) == 1
+                    MtU{2} = 3;
+                else
+                    MtU{2} = str2double(MtU{2});
+                end
+                options.method = ['RemoveSpikestm:', num2str(MtU{2})];
+                
             case 'thresholding'
                 % Check Dataset format
                 if ~strcmp(infoDts.Format, 'profile')
@@ -630,8 +918,8 @@ obj.save;
         end
         
         % 2- Default parameters
-        options.RemSpks = false;
-        options.SpkSz   = 1;
+        options.RemSpks = true;
+        options.SpkSz   = 2;
         
         % 3- Decipher varargin
         input = @(x) find(strcmpi(varargin,x),1);

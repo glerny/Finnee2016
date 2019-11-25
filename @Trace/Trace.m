@@ -158,8 +158,8 @@ classdef Trace
                     else
                         n    = obj.bz;
                         prcs = obj.Precision;
-                        fidReadDat = fopen(obj.Path2Dat, 'rb');
-                        fseek(fidReadDat,  obj.Index(1), 'bof');
+                        fidReadDat = fopen(obj.Path2Dat, 'r');
+                        fseek(fidReadDat,  obj.Index(1), 'bof'); 
                         data = fread(fidReadDat, ...
                             [( obj.Index(2)- obj.Index(1))/(n* 2) 2], prcs);
                         fclose(fidReadDat);

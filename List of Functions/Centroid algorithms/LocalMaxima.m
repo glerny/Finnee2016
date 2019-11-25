@@ -20,20 +20,20 @@
 % 4. COPYRIGHT
 % Copyright 2014-2015 G. Erny (guillaume@fe.up,pt), FEUP, Porto, Portugal
 
-function redMS = LocalMaxima(XY, wdz, thrI)
+function [redMS, I4LM] = LocalMaxima(XY, wdz, thrI)
 
 %% CORE OF THE FUNCTION
 % Finding non nul local maxima
 yy = XY(:,2);
 yy(yy <= thrI) = 0;
 A = zeros(length(yy), 2*wdz + 1);
-for ii = 1:2*wdz+1;
+for ii = 1:2*wdz+1
     ind1 = max(1, wdz+2-ii);
     ind2 = min(length(yy), length(yy) + wdz+1-ii);
     A(length(yy)-ind2+1:length(yy)-ind1+1,ii) = yy(ind1:ind2);
 end
 
-lmax = yy >= max(A, [], 2) & yy >= thrI;
+lmax = yy >= max(A, [], 2) & yy >= thrI+1;
 % calculate accurate masses with the three most intense
 % points
 jj   = 1;
@@ -41,7 +41,9 @@ a    = [];
 b    = [];
 c    = [];
 I4LM = []; % to record the indices of the peak maxima.
-lmax(1) = 0;
+lmax(1) = false;
+lmax(end) = false;
+
 while 1
     if lmax(jj)
         % We used the analytical solution for the polynomial of degree 2 as
@@ -58,6 +60,7 @@ while 1
         if lmax(jj+1)   % Check if the following data points is also a 
                         % local maxima. If yes, skip it.
             jj = jj + 1;
+            lmax(jj+1) = false;
         end
     end
     jj = jj + 1;
