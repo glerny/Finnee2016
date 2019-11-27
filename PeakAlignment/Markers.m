@@ -1,12 +1,30 @@
-function Master = Markers
+%% DESCRIPTION
+% MARKERS aligned multiples QC peak list to find common features.
+%
+%% INPUT PARAMETERS
+% *Compulsory*
+% *cMz      : Mz constrain for clustering
+% *cTm      : Time constrain for clustering
+% *WR       : Weight ratio
+% *nthre    : Percentage of QC were a features should be detected 
+%
+%
+%% OUTPUT PARAMETERS
+% *Master   : Output structure.
+%
+%% EXAMPLES
+% Master = Markers(0.001, 0.1, 100, 75)
+%% COPYRIGHT
+% Copyright BSD 3-Clause License Copyright 2016-2017 G. Erny
+% (guillaume@fe.up.pt), FEUP, Porto, Portugal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Master = Markers(cMz, cTm, WR, nthre)
 
 % I. INITIALISATION
 % I.1. Constants
-WR      = 170; % weight ratio mz/tm. 0.5 min as the same weight as 0.001 ppm
-cMz     = 0.005;    % constrain condition for mz
-cTm     = 0.5;      % constrain condition for tm
+
 cArea   = 2;
-nthre   = 0.75;
 thrSN   = 10;
 thrCC   = 0.7;
 TLim    = [0 inf];
@@ -125,15 +143,13 @@ for ii = 1:length(Cluster)
 end
 
 
-minRplt = ceil(nthre* QCnbr);
+minRplt = ceil(nthre* QCnbr/100);
 Ix = find(FOM(:,2) < minRplt);
 FOM(Ix, :) = [];
 Areas(Ix, :) = [];
 Cluster(Ix) = [];
 allPrf(Ix)  = [];
 FOM(:,1) = 1:length(Cluster);
-Im = findSupClusters(FOM);
-FOM(:, end+1)= Im';
 
 Master.paramters.WR      = WR;
 Master.paramters.cTm     = cTm;
@@ -149,8 +165,6 @@ Master.Markers.Cluster = Cluster;
 Master.Markers.FOM     = FOM;
 Master.Markers.SAreas  = Areas;
 Master.Markers.Profi   = allPrf;
-% fprintf('Total markers found (at least common to %.0f QC): \t%.0f\n',  [minRplt length(Cluster)]);
-% fprintf('Markers common to the %.0f QC samples: \t%.0f\n',  [repli sum(FOM(:,2) == repli)]);
 
     function cluster = ConsClust(Mst)
         
@@ -224,46 +238,8 @@ Master.Markers.Profi   = allPrf;
             if length(unique(ccData(:,9))) == length(ccData(:,9))
                 FOM(ccii, 9) = 1;
             end
-            
         end
     end
-
-
-
-
-end
-
-function cluster = Clust_2(Data, cluster, WR)
-
-% find multiplons
-Xx      = unique(Data(:,9));
-[~, tg] = max(histc(Data(:,9), Xx));
-lst = find(Data(:,9) == Xx(tg(1)));
-
-for ll = 1:length(lst)
-    ccluster{ll} = Data(lst(ll), :);
-    cFOM(ll, :) = [1, Data(lst(ll), [3, 6])];
-end
-Data(lst, :) = [];
-
-for ll = 1:size(Data, 1)
-    test = cFOM(:, [2, 3]) - Data(ll, [3 6]);
-    [~, Id4min] = min(sqrt((test(:,1)/WR).^2 +(test(:,2)).^2));
-    cD    = [ccluster{Id4min};  Data(ll, :)];
-    ccluster{Id4min}   = cD;
-    cFOM(Id4min, 2:3) = mean(cD(:, [3 6]), 1);
-    cFOM(Id4min, 1)   = size(cD,1);
-end
-
-for ll = 1:size(ccluster, 2)
-    cD = ccluster{ll};
-    if length(unique(cD(:,9))) ~= length(cD(:,9))
-        cluster = Clust_2(cD, cluster, WR);
-    else
-        cluster{end+1} = cD;
-    end
-end
-
 end
 
 function [FOM, Cluster] = Concatenate(FOM, Cluster)
@@ -309,23 +285,4 @@ while 1
     end
 end
 FOM = FOM(:, 1:8);
-end
-
-function Ix = findSupClusters(FOM)
-mStm = median(FOM(FOM(:,2) >= 4,4));
-mSmz = median(FOM(FOM(:,2) >= 4,6));
-FOM(FOM(:,4) < mStm , 4) = mStm;
-FOM(FOM(:,6) < mSmz , 6) = mSmz;
-for ii = 1:size(FOM, 1)
-    IdX = find(abs(FOM(ii, 3) - FOM(:,3)) <= 2*(FOM(ii,4) + FOM(:,4)) & ...
-        abs(FOM(ii, 5) - FOM(:,5)) <= 2*(FOM(ii,6) + FOM(:,6)));
-    
-    if length(IdX) > 1
-        Ix(ii) = 1;
-    else
-        Ix(ii) = 0;
-    end
-end
-
-
 end
