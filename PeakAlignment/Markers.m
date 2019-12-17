@@ -19,7 +19,7 @@
 % (guillaume@fe.up.pt), FEUP, Porto, Portugal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Master = Markers(cMz, cTm, WR, nthre)
+function Master = Markers(cMz, cTm, WR, nthre, nameQC)
 
 % I. INITIALISATION
 % I.1. Constants
@@ -29,6 +29,14 @@ thrSN   = 10;
 thrCC   = 0.7;
 TLim    = [0 inf];
 Master.QC.PeakLists = {};
+
+if nargin < 4
+    error('no enought paramters')
+elseif nargin == 4
+    nameQC = 'myPeakList.mat';
+else
+    error('too much parameters')
+end
 
 % I.2. Load QC samples
 Master.path      = pwd;
@@ -40,7 +48,7 @@ figure('Name', 'check me!'),
 hold on
 
 for ii = 1:length(dirs)
-    myPLQ{ii} = load(fullfile(dirs{ii}, 'myPeakList_bak.mat'));
+    myPLQ{ii} = load(fullfile(dirs{ii}, nameQC));
     BPP = myPLQ{ii}.myPeakList.BPP{1, 1}.Data;
     IdB = strfind(dirs{ii}, '\');
     Name = dirs{ii}(IdB(end)+1:end-4);

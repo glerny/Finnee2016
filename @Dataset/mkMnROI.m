@@ -6,7 +6,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function tgtROIs = mkMnROI(obj, mzList, mzWdw, tmList, tmWdW)
+function tgtROIs = mkMnROI(obj, mzList, mzWdw, tmList, tmWdW, name)
 
 AxisX     = obj.AxisX.Data;
 AxisY     = obj.AxisY.Data;
@@ -47,13 +47,14 @@ switch obj.Format
                     end
                 end
             end
+            
+            
         end
         
     case 'centroid'
         error('L37')
 end
-
-try close(h); catch, end %#ok<CTCH>
+if ishandle(h), close(h); end
 
 h = waitbar(0,'Saving ROI, please wait');
 for jj = 1:length(mzList)
@@ -79,6 +80,7 @@ for jj = 1:length(mzList)
     
     s{jj} = ROI(InfoROI);
 end
+if ishandle(h), close(h); end
 
 tgtROIs.mzList = mzList;
 tgtROIs.mzWdw  = mzWdw;
@@ -86,5 +88,6 @@ tgtROIs.tmList = tmList;
 tgtROIs.tmWdW  = tmWdW;
 tgtROIs.ROI    = s;
 
-save(fullfile(obj.Path2Fin, 'tgtROIS.mat'), 'tgtROIs')
+obj.Path2Fin = strrep(obj.Path2Fin,'O meu disco','My Drive');
+save(fullfile(obj.Path2Fin, name), 'tgtROIs')
 end
