@@ -1,5 +1,5 @@
 # @17/12/2019
-New object: Master allow to align multiple peak list. This is a pre-realeased that preclude the publication of a new article. Further explenation and update in the wiki will be done after the publication is accepted:
+New object: Master allows to align multiple peak lists. This is a pre-realease that preclude the publication of a new article. Further explenations and update in the wiki will be done after the publication is accepted:
 
 # ACKNOWLEDGMENT 
 This work was financially supported by the projects: (i) UID/EQU/00511/2019 - Laboratory for Process Engineering, Environment, Biotechnology and Energy – LEPABE funded by national funds through FCT/MCTES (PIDDAC); (ii) POCI-01-0145-FEDER-029702 and POCI-01-0145-FEDER-031297 funded by FEDER funds through COMPETE2020 – Programa Operacional Competitividade e Internacionalização (POCI) and by national funds (PIDDAC) through FCT/MCTES; (iii) LEPABE-2-ECO-INNOVATION – NORTE‐01‐0145‐FEDER‐000005, funded by Norte Portugal Regional Operational Programme (NORTE 2020), under PORTUGAL 2020 Partnership Agreement, through the European Regional Development Fund (ERDF); (iv) AstraZeneca – Projecto OLDER (CEDOC/2015/59); (v) iNOVA4Health - UID/Multi/04462/2013, financially supported by FCT/Ministério da Educação e Ciência, and co-funded by FEDER under the PT2020 Partnership Agreement.
