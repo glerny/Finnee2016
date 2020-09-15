@@ -27,9 +27,6 @@ classdef Axis
                      %  'None'  : No Data
                      %  'inAxis' : data are within the class
                      %  'inFile': data are stored in an associated binary file
-    end
-    
-    properties (Hidden = true, SetAccess = immutable)
         Precision    % 'inFile' only; Precision in the binary files
         Path2Dat     % 'InFile' only; Address to the file where
                      % the data are stored

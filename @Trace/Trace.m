@@ -158,7 +158,7 @@ classdef Trace
                     else
                         n    = obj.bz;
                         prcs = obj.Precision;
-                        obj.Path2Dat = strrep(obj.Path2Dat,'O meu disco','My Drive');
+                        obj.Path2Dat = strrep(obj.Path2Dat,'H:\Analytica Chimica','F:\Analytica Chimica');
                         fidReadDat = fopen(obj.Path2Dat, 'r');
                         fseek(fidReadDat,  obj.Index(1), 'bof'); 
                         data = fread(fidReadDat, ...

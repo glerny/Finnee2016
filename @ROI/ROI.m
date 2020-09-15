@@ -23,20 +23,21 @@ classdef ROI
         TagOfDts     % Additional info (normally where the data come from'.
         TgtMz        % Target mz value
         MzWdw        % mz window in datapts (full interval 1+2*mzWdw
-        TgtTm        % Target Interval
+        TgtTm        % Target Time
+        TgtVar       % Variance of the target Peak
         tmWdW        % time wdw
         AxisTm       % Time Axis
         AxisMZ       % MZ Axis
         Path2Fin     % Link to the Finnee folder
         StoredData   % The data
-        Filter  = {-3:3,-3:3,2,2};
+        %Filter  = {-3:3,-3:3,2,2};
         Noise = 0;
     end
     
     properties (Dependent)
         InfoROI     % Get back the data of the Axisthe binary file
-        Smoothed
-        Derived
+        %Smoothed
+        %Derived
     end
     
     
@@ -51,6 +52,7 @@ classdef ROI
                 obj.MzWdw      = NaN;
                 obj.TgtTm      = NaN;
                 obj.tmWdW      = NaN;
+                obj.TgtVar     = NaN;
                 obj.AxisTm     = Axis;
                 obj.AxisMZ     = Axis;
                 obj.Path2Fin   = '';
@@ -64,6 +66,7 @@ classdef ROI
                 obj.TgtTm      = InfoROI.TgtTm;
                 obj.tmWdW      = InfoROI.tmWdW;
                 obj.AxisTm     = InfoROI.AxisTm;
+                obj.TgtVar     = InfoROI.TgtVarnc;
                 obj.AxisMZ     = InfoROI.AxisMZ;
                 obj.Path2Fin   = InfoROI.Path2Fin;
                 obj.StoredData = InfoROI.StoredData;
@@ -87,17 +90,17 @@ classdef ROI
             InfoROI.SmoothWdw  = obj.SmoothWdw;
         end
         
-        function Smoothed = get.Smoothed(obj)
-            
-            h = sgsdf_2d(obj.Filter{1},obj.Filter{2},obj.Filter{3},obj.Filter{4},0,0);
-            Smoothed = imfilter(obj.StoredData,h);
-        end
-        
-        function Derived = get.Derived(obj)
-            
-            h = sgsdf_2d(obj.Filter{1},obj.Filter{2},obj.Filter{3},obj.Filter{4},1,0);
-            Derived = imfilter(obj.StoredData,h);
-        end
+%         function Smoothed = get.Smoothed(obj)
+%             
+%             h = sgsdf_2d(obj.Filter{1},obj.Filter{2},obj.Filter{3},obj.Filter{4},0,0);
+%             Smoothed = imfilter(obj.StoredData,h);
+%         end
+%         
+%         function Derived = get.Derived(obj)
+%             
+%             h = sgsdf_2d(obj.Filter{1},obj.Filter{2},obj.Filter{3},obj.Filter{4},1,0);
+%             Derived = imfilter(obj.StoredData,h);
+%         end
         
     end
 end

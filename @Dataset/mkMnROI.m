@@ -6,19 +6,28 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function tgtROIs = mkMnROI(obj, mzList, mzWdw, tmList, tmWdW, name)
+function tgtROIs = mkMnROI(obj, mzList, mzWdw, tmList, tmWdW, name, varList)
 
 AxisX     = obj.AxisX.Data;
 AxisY     = obj.AxisY.Data;
 
+if size(mzWdw, 1) == 1
+    mzWdw = ones(size(mzList))*mzWdw;
+end
+
+if size(tmWdW, 1) == 1
+    tmWdW = ones(size(mzList))*tmWdW;
+end
+
+
 for ii = 1:length(mzList)
     ix = findCloser(mzList(ii), AxisY);
-    indMZ(ii, 1) = max(1, ix-mzWdw);
-    indMZ(ii, 2) = min(ix+mzWdw, length(AxisY));
+    indMZ(ii, 1) = max(1, ix-mzWdw(ii));
+    indMZ(ii, 2) = min(ix+mzWdw(ii), length(AxisY));
     Data4ROI{ii} = [];
     
-    timesInt(ii, 1) = max(AxisX(1), tmList(ii)-tmWdW);
-    timesInt(ii, 2) = min(tmList(ii)+tmWdW, AxisX(end));
+    timesInt(ii, 1) = max(AxisX(1), tmList(ii)-tmWdW(ii));
+    timesInt(ii, 2) = min(tmList(ii)+tmWdW(ii), AxisX(end));
 end
 
 TLim      = [min(timesInt(:,1)), max(timesInt(:,2))];
@@ -40,11 +49,9 @@ switch obj.Format
                 
                 XMS = xpend(obj, obj.ListOfScans{ii});
                 
-                for jj = 1:length(mzList)
-                    if timesInt(jj, 1) <= AxisX(ii) &&...
-                            timesInt(jj, 2) >= AxisX(ii) 
-                        Data4ROI{jj}(:, end+1) = XMS.Data(indMZ(jj,1):indMZ(jj,2), 2);
-                    end
+                id = find(timesInt(:,1) <= AxisX(ii) & timesInt(:, 2) >= AxisX(ii));
+                for jj = 1:length(id)
+                    Data4ROI{id(jj)}(:, end+1) = XMS.Data(indMZ(id(jj),1):indMZ(id(jj),2), 2);
                 end
             end
             
@@ -61,12 +68,13 @@ for jj = 1:length(mzList)
     waitbar(jj/length(mzList))
     [InfoROI.Title, errmsg] = ...
         sprintf('ROI with tm from %.2f:%.2f %s and mz=%.4f +/- %u datapoints.', ...
-        timesInt(jj, 1), timesInt(jj, 2), obj.AxisX.Unit, mzList(jj), mzWdw);
+        timesInt(jj, 1), timesInt(jj, 2), obj.AxisX.Unit, mzList(jj), mzWdw(jj));
     InfoROI.TagOfDts = obj.Log;
     InfoROI.TgtMz    = mzList(jj);
-    InfoROI.MzWdw    = mzWdw;
+    InfoROI.MzWdw    = mzWdw(jj);
     InfoROI.TgtTm    = tmList(jj);
-    InfoROI.tmWdW    = tmWdW;
+    InfoROI.tmWdW    = tmWdW(jj);
+    InfoROI.TgtVarnc = varList(jj);
     
     AxisXc     = AxisX(timesInt(jj, 1) <= AxisX & timesInt(jj, 2) >= AxisX);
     AxisTm     = Axis(obj.AxisX.InfoAxis, AxisXc);
@@ -88,6 +96,7 @@ tgtROIs.tmList = tmList;
 tgtROIs.tmWdW  = tmWdW;
 tgtROIs.ROI    = s;
 
-obj.Path2Fin = strrep(obj.Path2Fin,'O meu disco','My Drive');
-save(fullfile(obj.Path2Fin, name), 'tgtROIs')
+if ~isempty(name)
+    save(fullfile(obj.Path2Fin, name), 'tgtROIs')
+end
 end

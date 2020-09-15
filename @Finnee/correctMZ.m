@@ -8,11 +8,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function obj = correctMZ(obj, dts, backgIons, varargin)
+function obj = correctMZ_stp1(obj, dts, varargin)
 
 %% CORE OF THE FUNCTION
 % 1- Initialisation and options
-
+Thres = 2;
 dtsIn            = obj.Datasets{dts};
 infoDts          = dtsIn.InfoDts;
 infoDts.Path2Dat = {};
@@ -42,8 +42,9 @@ end
 
 infoDts.Log = [log2add, '|', infoDts.Log];
 
+
 h = waitbar(0,'processing scans');
-for ii = 1:length(dtsIn.AxisX.Data)
+for ii = 2:length(dtsIn.AxisX.Data)
     waitbar(ii/size(allProfiles, 1))
     
     infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
@@ -51,28 +52,76 @@ for ii = 1:length(dtsIn.AxisX.Data)
     
     if ~isempty(Scanii.Data)
         
-        XMS = dtsIn.AxisY.Data;
-        XY  = Scanii.Data;
-        XY(:,3) = polyval(backgIons.P(ii,:), XY(:,1));
-        XY(:,4) = XY(:,1) - XY(:,3).*XY(:,1);
-        XY(:,1) = XY(:,4);
-        
-        vq =  interp1(XY(:,1), XY(:,2), XMS(:,1),...
-            options.mth4interp1);
-        XMS(:,2) = vq;
-        XMS(isnan(XMS(:,2)), 2) = 0;
-        XMS(:,2) = round(XMS(:,2));
-        XMS(XMS(:,2) <0, 2) = 0;
-        
-        % Filter spikes if needed
-        if obj.Options.RemSpks
-            spkSz = obj.Options.SpkSz;
-            XMS   = spikesRemoval(XMS, spkSz );
+        ScanMdl  = dtsIn.ListOfScans{ii-1};
+        if ~isempty(ScanMdl.Data)
+            MSmdl = ScanMdl.Data;
+            id = find(MSmdl(:,2) == 0);
+            id(:,2) = [1; diff(id(:,1))];
+            Ix2cut = find(id(:,2) >= 5);
+            CtrMSmdl = zeros(length(Ix2cut), 4);
+            for jj = 1:length(Ix2cut)
+                cData = MSmdl(id(Ix2cut(jj)-1, 1):id(Ix2cut(jj), 1), :);
+                CtrMSmdl(jj, :) = ChrMoment( cData);
+            end
+            
+            MSii = Scanii.Data;
+            id = find(MSii(:,2) == 0);
+            id(:,2) = [1; diff(id(:,1))];
+            Ix2cut = find(id(:,2) >= 5);
+            CtrMSii = zeros(length(Ix2cut), 4);
+            for jj = 1:length(Ix2cut)
+                cData = MSii(id(Ix2cut(jj)-1, 1):id(Ix2cut(jj), 1), :);
+                CtrMSii(jj, :) = ChrMoment( cData);
+            end
+            
+            c1 = CtrMSmdl{1}(:, [2 1]);
+            c1(:,3) = 1;
+            c2 = CtrMSii{2}(:, [2 1]);
+            c2(:,3) = 2;
+            CC = [c1; c2];
+            CC = sortrows(CC, 1);
+            CC(:,4) = [2*Thres; diff(CC(:,1))]./CC(:,1)*1000000;
+            MergedData = [];
+            id = find(CC(:,4) <= Thres);
+            
+            for ii = 1:length(id)
+                cData = sortrows(CC(id(ii)-1:id(ii), :), 3);
+                if length(unique(cData(:,3))) == 2
+                    MergedData(end+1, [1 2]) = cData(1, [1, 2]);
+                    MergedData(end  , [3 4]) = cData(2, [1, 2]);
+                end
+            end
+            
+            MergedData(:, 5) = (MergedData(:, 2) + MergedData(:, 4))/2;
+            MergedData(:, 6) = (MergedData(:, 1) - MergedData(:, 3))./MergedData(:, 3);
+            MergedData = sortrows(MergedData, -5);
+            
+            
+            
+            XMS = dtsIn.AxisY.Data;
+            XY  = Scanii.Data;
+            XY(:,3) = polyval(backgIons.P(ii,:), XY(:,1));
+            XY(:,4) = XY(:,1) - XY(:,3).*XY(:,1);
+            XY(:,1) = XY(:,4);
+            
+            vq =  interp1(XY(:,1), XY(:,2), XMS(:,1),...
+                options.mth4interp1);
+            XMS(:,2) = vq;
+            XMS(isnan(XMS(:,2)), 2) = 0;
+            XMS(:,2) = round(XMS(:,2));
+            XMS(XMS(:,2) <0, 2) = 0;
+            
+            % Filter spikes if needed
+            if obj.Options.RemSpks
+                spkSz = obj.Options.SpkSz;
+                XMS   = spikesRemoval(XMS, spkSz );
+            end
+            
+        else
+            XMS = dtsIn.AxisY.Data;
+            XMS(:,2) = 0;
+        else
         end
-        
-    else
-        XMS = dtsIn.AxisY.Data;;
-        XMS(:,2) = 0;
     end
     
     

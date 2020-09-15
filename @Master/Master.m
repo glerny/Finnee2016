@@ -20,65 +20,69 @@ classdef Master
     properties
         Path
         Name
-        QCFiles
-        ClusteredQC
-        HACA
-        QuantitAnalysis
-        SamplesFiles
-        Tag
-        Ord4Ali = 0
-        NPL = 'myPeakList.mat'
+        QC      = {};
+        Samples = {};
+        NPL     = 'myPeakList.mat'
     end
     
     methods
         function obj = Master(cMz, cTm, WR, nthre)
-            % I. INITIALISATION
-            % I.1. Constants
+            %% 1- INITIALISATION
+            % 1.1. Constants
             
             [obj.Name, obj.Path] = uiputfile('*.mat','Location of master file');
             cArea   = 2;
             thrSN   = 10;
             thrCC   = 0.7;
             TLim    = [0 inf];
-            obj.QCFiles = {};
+            Mw      = 50000;
             
-            % I.2. Load QC samples
+            % 1.2. Load QC samples
             fprintf('\n\n STARTING \n')
             dirs = uigetdirs(pwd, 'select Finnee QC folders');
             
             figure
             hold on
+            Lim = [inf, 0];
             for ii = 1:length(dirs)
                 PL{ii} = load(fullfile(dirs{ii}, obj.NPL));
                 plot(PL{ii}.myPeakList.BPP{1}.Data(:,1), PL{ii}.myPeakList.BPP{1}.Data(:,2))
                 PL{ii}.myPeakList.FOM{1}.Data(:,1) = ...
                     1:length(PL{ii}.myPeakList.FOM{1}.Data(:,1));
                 myPkLsts{ii} = PL{ii}.myPeakList.FOM{1}.Data;
-                obj.QCFiles{ii} = dirs{ii};
+                obj.QC.Files{ii} = dirs{ii};
+                axis{ii} = PL{ii}.myPeakList.AxisX{1, 1}.Data;
+                Lim = [min(Lim(1), min(axis{1})) max(Lim(2), max(axis{1}))];
+            end
+            
+            p = polyfull(axis{1}(2:end), diff(axis{1}), 2, []);
+            AxisTm = Lim(1);
+            while 1
+                AxisTm(end+1) = AxisTm(end) + polyval(p, AxisTm(end));
+                if AxisTm(end) > Lim(2), break; end
+                
             end
             hold off
             repli   = ii;
             QCnbr   = ii;
             
-            % II. Finding markers without tm correction
-            %II.1. CONSTRAINED CLUSTERING USING NEAREST NEIGHBOURG
-            Cluster = ConsClust(myPkLsts);
+            %% 2-. Finding markers without tm correction
+            % 2.1. CONSTRAINED CLUSTERING USING NEAREST NEIGHBOURG
+            Cluster = ConsClust(myPkLsts);  
             
-            if obj.Ord4Ali ~= 0
-                disp('HiThere')
-            end
-            
-            
-            
-            %III.2. Check profiles in each cluster
-            ii = 1;
-            Mcc = [];
+            %% 3- Check profiles in each cluster
+            ii     = 1;
+            Mcc    = [];
             allPrf = {};
+            id2del =  size(Cluster);
+            
             while 1
                 if ii > length(Cluster)
                     break
                 end
-                Profiles = PL{1}.myPeakList.BPP{1}.Data(:,1);
+                
+                Profiles = AxisTm';
+                % 3.1 DO test
                 cData = Cluster{ii};
                 if size(cData, 1) > 1
                     for jj = 1:size(cData, 1)
@@ -91,8 +95,18 @@ classdef Master
                         vq(isnan(vq)) = 0;
                         Profiles(:, end+1) = vq;
                     end
-                    Profiles(sum(Profiles(:, 2:end) == 0, 2) == jj, :) = [];
+                    PrfMinus = circshift(Profiles(:, 2:end), -1);
+                    PrfPlus  = circshift(Profiles(:, 2:end), 1);
+                    Profiles(sum([PrfMinus, Profiles(:, 2:end), PrfPlus] == 0, 2) == 3*jj, :) = [];
+                    
+                    if any(sum(Profiles) == 0)
+                        disp('HISE')
+                    end
+                    
                     CC = corrcoef([mean(Profiles(:, 2:end), 2), Profiles(:, 2:end)]);
+                    if isempty(CC)
+                        do('wtfh')
+                    end
                     
                     if length(unique(cData(:,9))) ~= length(cData(:,9)) || min(CC(2:end, 1)) < thrCC
                         CC(:,1) = []; CC(1, :) = [];
@@ -116,26 +130,26 @@ classdef Master
                 end
             end
             
-            FOM = zeros(length(Cluster), 10);
+            % 3.2. Calculate FOM
+            FOM = zeros(length(Cluster), 11);
             for ii = 1:length(Cluster)
                 vect = zeros(1, repli - QCnbr);
                 cData = Cluster{ii};
                 FOM(ii, 1) = ii;
                 FOM(ii, 2) = sum(cData(:,9) <= QCnbr);
-                FOM(ii, 3) = sum(cData(:,9) > QCnbr);
-                FOM(ii, 4) = mean(cData(:,3));
-                FOM(ii, 5) = std(cData(:,3));
-                FOM(ii, 6) = mean(cData(:,6));
-                FOM(ii, 7) = std(cData(:,6));
+                FOM(ii, 3) = mean(cData(:,3));
+                FOM(ii, 4) = std(cData(:,3));
+                FOM(ii, 5) = mean(cData(:,6));
+                FOM(ii, 6) = std(cData(:,6));
                 idc = cData(:,9) <= QCnbr;
-                FOM(ii, 8) = mean(cData(idc,2));
-                FOM(ii, 9) = std(cData(idc,2));
-                FOM(ii, 10) = FOM(ii, 9)/FOM(ii, 8)*100;
-                FOM(ii, 11) = Mcc(ii,1);
-                FOM(ii, 12) = Mcc(ii,2);
+                FOM(ii, 7) = mean(cData(idc,2));
+                FOM(ii, 8) = std(cData(idc,2));
+                FOM(ii, 9) = FOM(ii, 8)/FOM(ii, 7)*100;
+                FOM(ii, 10) = Mcc(ii,1);
+                FOM(ii, 11) = Mcc(ii,2);
             end
             
-            
+            % 3.3. Filter bad clusters
             minRplt = ceil(nthre* QCnbr/100);
             Ix = find(FOM(:,2) < minRplt);
             FOM(Ix, :) = [];
@@ -143,24 +157,37 @@ classdef Master
             allPrf(Ix)  = [];
             FOM(:,1) = 1:length(Cluster);
             
-            obj.ClusteredQC.paramters.WR      = WR;
-            obj.ClusteredQC.paramters.cTm     = cTm;
-            obj.ClusteredQC.paramters.cMz     = cMz;
-            obj.ClusteredQC.paramters.FOM     = FOM;
-            obj.ClusteredQC.paramters.cArea   = cArea;
-            obj.ClusteredQC.paramters.nthre   = nthre;
-            obj.ClusteredQC.paramters.thrSN   = thrSN;
-            obj.ClusteredQC.paramters.thrCC   = thrCC;
-            obj.ClusteredQC.paramters.TLim    = TLim;
+            %% 4- Save and quit
+            obj.QC.parameters.WR      = WR;
+            obj.QC.parameters.cTm     = cTm;
+            obj.QC.parameters.cMz     = cMz;
+            obj.QC.parameters.cArea   = cArea;
+            obj.QC.parameters.nthre   = nthre;
+            obj.QC.parameters.thrSN   = thrSN;
+            obj.QC.parameters.thrCC   = thrCC;
+            obj.QC.parameters.TLim    = TLim;
+            obj.QC.parameters.nbrQC   = QCnbr;
+            obj.QC.parameters.minRplt = minRplt;
             
-            obj.ClusteredQC.Cluster = Cluster;
-            obj.ClusteredQC.FOM     = FOM;
-            obj.ClusteredQC.TimeAxis = PL{1}.myPeakList.BPP{1}.Data(:,1);
-            obj.ClusteredQC.Profiles   = allPrf;
+            
+            obj.QC.Method1.Cluster = Cluster;
+            obj.QC.Method1.FOM    = array2table(FOM,...
+                'VariableNames',{'ID', 'Replicates', ...
+                'CtrTime', 'std_CtrTime', ...
+                'AccurateMass', 'std_AccurateMass', ...
+                'Area', 'std_ARea', 'RSD'...
+                'Mean_PearsonCoef', 'Min_PearsonCoef'});
+            obj.QC.Method1.Profiles   = allPrf;
+            
+            obj.QC.Axis.AxisX = Axis(PL{1}.myPeakList.AxisX{1}.InfoAxis, AxisTm');
+            obj.QC.Axis.AxisY = PL{1}.myPeakList.AxisY{1};
             
             myMaster = obj;
             save(fullfile(obj.Path, obj.Name), 'myMaster')
             
+            %% NESTED FUNCTIONS
+            
+            % NF1- COnstrained clustering
             function cluster = ConsClust(PLs)
                 
                 %1. randomise the ordre of selection of replicates
@@ -235,10 +262,9 @@ classdef Master
                 end
             end
             
+            % NF2- CONCATENATE CLUSTER THAT OVERLAP AT 4xSIGMA
             function [FOM, Cluster] = Concatenate(FOM, Cluster)
                 
-                %III. CONCATENATE CLUSTER THAT OVERLAP AT 4xSIGMA
-                %!!! CORRECT FORM FOR WRONG SIGMA (IF n < 4);
                 while 1
                     
                     redo = false;
@@ -248,11 +274,11 @@ classdef Master
                         mSmz = median(FOM(FOM(:,2) >= 4,6));
                         FOM(:,9) = FOM(:,4);
                         FOM(:,10) = FOM(:,6);
-                        FOM(FOM(:,9) < mStm , 9) = mStm;
-                        FOM(FOM(:,10) < mSmz , 10) = mSmz;
+                        %FOM(FOM(:,9) < mStm , 9) = mStm;
+                        %FOM(FOM(:,10) < mSmz , 10) = mSmz;
                         IdCct =...
-                            find(abs(FOM(cii, 3) - FOM(:,3)) <= 2*(FOM(cii,9) + FOM(:,9)) & ...
-                            abs(FOM(cii, 5) - FOM(:,5)) <= 2*(FOM(cii, 10) + FOM(:, 10)));
+                            find(abs(FOM(cii, 3) - FOM(:,3)) <= 3*(FOM(cii,9) + FOM(:,9)) & ...
+                            abs(FOM(cii, 5) - FOM(:,5)) <= 3*(FOM(cii, 10) + FOM(:, 10)));
                         
                         if length(IdCct) > 1
                             ccData = [Cluster{IdCct(1)}; Cluster{IdCct(2)}];
@@ -265,7 +291,6 @@ classdef Master
                             FOM(IdCct(2), :)  = [];
                             Cluster(IdCct(2)) = [];
                             redo = true;
-                            %disp('merging')
                         end
                         cii = cii+1;
                         if cii > size(FOM, 1), break, end
@@ -274,18 +299,12 @@ classdef Master
                     if ~redo
                         break
                     else
-                        %disp('one more cycle')
+                        disp('one more cycle')
                     end
                 end
                 FOM = FOM(:, 1:8);
                 
             end
-        end
-        
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
         end
     end
 end

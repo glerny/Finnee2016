@@ -34,11 +34,11 @@ for ii = 1:iterMax
     
     m = mean(dn);
     s = std(dn);
-    w = abs((m-d)/s) < 1.98;
+    w = abs((m-d)/s) < 3;
     %%% ORIGINAL
     
     if sum(w) ==  L, break; end
-    if sum(w) <= 0.25*N, break; end
+    if sum(w) <= 0.5*N, break; end
 
     
     L = sum(w);

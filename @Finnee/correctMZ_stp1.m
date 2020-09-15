@@ -1,41 +1,5 @@
 %% DESCRIPTION
-% ALIGN2NEWMZ is used to normalise every MS scans in a datasets to a
-% common mz axis.
-%
-%% INPUT PARAMETERS
-% *Compulsory*
-% *obj      : The Finnee object
-% *dts      : The indice to the dataset that contains the original scans
-%           (should be profile scans)
-% *newAxis  : The mz axis that will be used as reference for every scans.
-%           This parameter can be empty, in this case the optional parameter
-%           'masterAxis' should be used to defined the new mz Axis (see
-%           *optional')
-%
-% *Optional*
-% *tLim       : Followed by a 2x1 array of numbers (default [0 inf]). Only
-%             records scans between tLim(1) and tLim(2)
-% *spikes     : Followed by an integer between 0 and 3 (default 2) (see the
-%             method @Finnee\FilterDataset) for additional information.
-%             Remove spikes in every MS scans If used, where spikes are any
-%             peaks in each MS of length equal or lower that the integer.
-%             'spikes' followed by 0 allows to to turn off spikes removal.
-% *masterAxis': Followed by a string in the form 'mzStart:mzEnd:Id'.
-%             mzStart and mzEnd will be used to defined the limit of the
-%             axis, Id is the indice to the scen that will be used to
-%             generate the mzAxis (used max if you want to use the most
-%             aboundant scans). For more information see help at
-%             @Trace\extrapolMZ
-% *meth4int'  : Followed by a string to specify an alternative
-%             interpolation method: 'nearest', 'next', 'previous',
-%             'linear','spline','pchip', or 'cubic'. The default method is
-%             'linear'. help interp1 for more information on the
-%             interpolation function. Changing this option is not advised.
-%
-%% OUTPUT PARAMETERS
-% *obj      : The Finnee object. !Important, if not input parameter is used
-%           the saved Finnnee object will still be modified.
-%
+
 %% EXAMPLES
 % myFinnee = myFinnee(
 %% COPYRIGHT
@@ -44,40 +8,26 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function obj = align2newMZ(obj, dts, newAxis, varargin)
+function obj = correctMZ_stp1(obj, dts, Markers, varargin)
 
 %% CORE OF THE FUNCTION
 % 1- Initialisation and options
+Thres = 5;
+Markers(:,3) = 2;
 
 dtsIn            = obj.Datasets{dts};
 infoDts          = dtsIn.InfoDts;
 infoDts.Path2Dat = {};
-options          = checkVarargin(infoDts, newAxis, varargin{:});
+options          = checkVarargin(infoDts, varargin{:});
 
 % Create new dat file
 [~, rndStr]         = fileparts(tempname);
 allProfiles(:,1)    = dtsIn.AxisX.Data;
 allProfiles(:,3)    = 0;
 
-% Load or create master mz Axis
-if options.MstAxis
-    M4MA = strsplit(options.mth4mstAxis, ':');
-    
-    if strcmpi(M4MA{3}, 'max')
-        [~,Id4MA] = max(dtsIn.TIP.Data(:,2));
-    else
-        Id4MA = str2double(M4MA{3});
-    end
-    
-    MZlim(1) = min( str2double(M4MA{1}), str2double(M4MA{2}));
-    MZlim(2) = max( str2double(M4MA{1}), str2double(M4MA{2}));
-    
-    [newAxis, ~, ~] = dtsIn.ListOfScans{Id4MA}.extrapolMZ(2, MZlim);
-end
-
 % Initiation of profiles
 infoDts.ListOfScans = {};
-AxisMZ(:,1)         = newAxis;
+AxisMZ(:,1)         = dtsIn.AxisY.Data;
 AxisMZ(:,4)         = 0;
 fln                 = 1;
 m                   = length(obj.Datasets)+1;
@@ -86,7 +36,7 @@ infoDts.Format      = 'profile';
 % 2- Load each scan and run the centroid algorithm
 
 infoDts.Title = 'profile dataset';
-log2add   = ['PRF=', num2str(m), ' MMZ=true'];
+log2add   = ['PRF=', num2str(m), ' MZcor=true'];
 
 if options.RemSpks
     log2add = [log2add, ' SPR=', num2str(options.SpkSz)];
@@ -103,10 +53,47 @@ for ii = 1:length(dtsIn.AxisX.Data)
     
     if ~isempty(Scanii.Data)
         
-        Id2Keep = Scanii.Data(:,1) >= newAxis(1) & Scanii.Data(:,1) <= newAxis(end);
+        MSii = Scanii.Data;
+        MSii(:,3) = circshift(MSii(:,2), 1);
+        id = find(sum(MSii(:, [ 2 3]), 2) == 0);
+        id(:,2) = [1; diff(id(:,1))];
+        Ix2cut = find(id(:,2) >= 5);
+        CtrMSii = zeros(length(Ix2cut), 4);
+        for jj = 1:length(Ix2cut)
+            cData = MSii(id(Ix2cut(jj)-1, 1):id(Ix2cut(jj), 1), 1:2);
+            CtrMSii(jj, :) = ChrMoment( cData);
+        end
         
-        XMS = newAxis;
-        XY  = Scanii.Data(Id2Keep, :);
+        c1 = CtrMSii(:, [2 1]);
+        c1(:,3) = 1;
+        CC = [c1; Markers];
+        CC = sortrows(CC, 1);
+        CC(:,4) = [2*Thres; diff(CC(:,1))]./CC(:,1)*1000000;
+        MergedData = [];
+        id = find(CC(:,4) <= Thres);
+        
+        for jj = 1:length(id)
+            cData = sortrows(CC(id(jj)-1:id(jj), :), 3);
+            if length(unique(cData(:,3))) == 2
+                MergedData(end+1, [1 2]) = cData(1, [1, 2]);
+                MergedData(end  , [3 4]) = cData(2, [1, 2]);
+            end
+        end
+        
+
+        MergedData(:, 5) = (MergedData(:, 3) - MergedData(:, 1))./MergedData(:, 1);
+        MergedData = sortrows(MergedData, -2);
+        
+        [p, ~] = polyfitweighted(MergedData(:,1), MergedData(:,5), 1, log10(MergedData(:,2).*MergedData(:,4)));
+        % plot(MergedData(:,1), polyval(p, MergedData(:,1)));
+        
+        XMS = dtsIn.AxisY.Data;
+        XY  = Scanii.Data;
+        if any(p)
+            XY(:,3) = polyval(p, XY(:,1));
+            XY(:,4) = XY(:,1) + XY(:,3).*XY(:,1);
+            XY(:,1) = XY(:,4);
+        end
         
         vq =  interp1(XY(:,1), XY(:,2), XMS(:,1),...
             options.mth4interp1);
@@ -121,11 +108,9 @@ for ii = 1:length(dtsIn.AxisX.Data)
             XMS   = spikesRemoval(XMS, spkSz );
         end
         
-        if any(XMS(:,1) == 0)
-            disp('WTF')
-        end
+        
     else
-        XMS = newAxis;
+        XMS = dtsIn.AxisY.Data;
         XMS(:,2) = 0;
     end
     
@@ -202,7 +187,7 @@ infoAxis           = dtsIn.AxisY.InfoAxis;
 infoAxis.Loc       = 'inFile';
 infoAxis.Precision = 'double';
 infoAxis.Path2Dat  = infoDts.Path2Dat{fln};
-masterMZAxis       = Axis(infoAxis, newAxis);
+masterMZAxis       = Axis(infoAxis, dtsIn.AxisY.Data);
 
 infoPrf.AxisX      = Axis(dtsIn.AxisX.InfoAxis);
 infoPrf.AxisY      = Axis(dtsIn.AxisZ.InfoAxis);
@@ -263,7 +248,7 @@ obj.save;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% CHECKVARARGIN
-    function options = checkVarargin(infoDts, newAxis, varargin)
+    function options = checkVarargin(infoDts, varargin)
         % CHECKVARARGIN is used to check the input paramters
         % and create the options parameter.
         
@@ -299,18 +284,6 @@ obj.save;
                 options.RemSpks = true;
                 options.SpkSz  =  spks;
             end
-        end
-        
-        if isempty(newAxis)
-            options.MstAxis      = true;
-            options.mth4mstAxis  =  [num2str(infoDts.MZlim(1)), ':', ...
-                num2str(infoDts.MZlim(2)), ':max'] ;
-        end
-        
-        tgtIx = input('masterAxis');
-        if ~isempty(tgtIx)
-            options.MstAxis      = true;
-            options.mth4mstAxis  =  varargin{tgtIx +1};
         end
         
     end

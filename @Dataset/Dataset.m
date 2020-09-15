@@ -1,8 +1,8 @@
 %% DESCRIPTION
-% DATASET is the class of the Finnee2016 toolbox that contain all 
-% information associated to one run (i.e. the list of scan as a 
-% function of time). The Dataset class contains a list of 
-% properties to describe and organise the information and specific method 
+% DATASET is the class of the Finnee2016 toolbox that contain all
+% information associated to one run (i.e. the list of scan as a
+% function of time). The Dataset class contains a list of
+% properties to describe and organise the information and specific method
 % to explore, display or transform those
 % data.
 %
@@ -18,7 +18,7 @@
 % *LAST*           : A blank trace
 % *ListOfScans*    : All the MS scans that make the dataset
 % *Option4crt*     : Options for the creation of this dataset
-% *Path2Dat*       : A list of all the dat files 
+% *Path2Dat*       : A list of all the dat files
 % *AxisX*          : Information about the time axis
 % *AxisY*          : Information about the m/z axis
 % *AxisZ*          : Information about the intensity axis
@@ -43,7 +43,7 @@
 classdef Dataset
     
     properties
-        Title          % Title for dataset      
+        Title          % Title for dataset
         Log            % Log of transformation
         DateOfCreation % Date of creation
         Format         % Format (i.e. 'centroid' or 'profile')
@@ -66,8 +66,8 @@ classdef Dataset
         
     end
     
-     properties (Dependent)
-         InfoDts       % Get back the data of the Dataset
+    properties (Dependent)
+        InfoDts       % Get back the data of the Dataset
     end
     
     methods
@@ -91,7 +91,7 @@ classdef Dataset
                 obj.AxisX       = Axis;
                 obj.AxisY       = Axis;
                 obj.AxisZ       = Axis;
-                obj.Path2Fin    = ''; 
+                obj.Path2Fin    = '';
                 obj.MZlim       = [inf 0];
                 
             elseif nargin == 1
@@ -110,29 +110,29 @@ classdef Dataset
                 obj.AxisX       = infoDts.AxisX;
                 obj.AxisY       = infoDts.AxisY;
                 obj.AxisZ       = infoDts.AxisZ;
-        		obj.Path2Fin    = infoDts.P2F; 
+                obj.Path2Fin    = infoDts.P2F;
                 obj.MZlim       = infoDts.MZlim;
             end
         end
         
         function infoDts = get.InfoDts(obj)
-                infoDts.Title          = obj.Title;
-                infoDts.Format         = obj.Format;
-                infoDts.Option4crt     = obj.Option4crt;
-                infoDts.Path2Dat       = obj.Path2Dat;
-                infoDts.BPP            = Trace(obj.BPP.InfoTrc);
-                infoDts.TIP            = Trace(obj.TIP.InfoTrc);
-                infoDts.TIS            = Trace(obj.TIS.InfoTrc);
-                infoDts.FIS            = Trace(obj.FIS.InfoTrc);
-                infoDts.BIS            = Trace(obj.BIS.InfoTrc);
-                infoDts.LAST           = Trace(obj.LAST.InfoTrc);
-                infoDts.ListOfScans{1} = Trace(obj.ListOfScans{1}.InfoTrc);
-                infoDts.Log            = obj.Log;
-                infoDts.AxisX          = Axis(obj.AxisX.InfoAxis);
-                infoDts.AxisY          = Axis(obj.AxisY.InfoAxis);
-                infoDts.AxisZ          = Axis(obj.AxisZ.InfoAxis);
-                infoDts.P2F            = obj.Path2Fin;
-                infoDts.MZlim          = obj.MZlim;
+            infoDts.Title          = obj.Title;
+            infoDts.Format         = obj.Format;
+            infoDts.Option4crt     = obj.Option4crt;
+            infoDts.Path2Dat       = obj.Path2Dat;
+            infoDts.BPP            = Trace(obj.BPP.InfoTrc);
+            infoDts.TIP            = Trace(obj.TIP.InfoTrc);
+            infoDts.TIS            = Trace(obj.TIS.InfoTrc);
+            infoDts.FIS            = Trace(obj.FIS.InfoTrc);
+            infoDts.BIS            = Trace(obj.BIS.InfoTrc);
+            infoDts.LAST           = Trace(obj.LAST.InfoTrc);
+            infoDts.ListOfScans{1} = Trace(obj.ListOfScans{1}.InfoTrc);
+            infoDts.Log            = obj.Log;
+            infoDts.AxisX          = Axis(obj.AxisX.InfoAxis);
+            infoDts.AxisY          = Axis(obj.AxisY.InfoAxis);
+            infoDts.AxisZ          = Axis(obj.AxisZ.InfoAxis);
+            infoDts.P2F            = obj.Path2Fin;
+            infoDts.MZlim          = obj.MZlim;
         end
         
         function XMS = xpend(obj, MS)
@@ -146,7 +146,15 @@ classdef Dataset
                 XMS(:,2) = 0;
             else
                 [~, loc] = ismember(MS.Data(:,1), XMS(:,1));
-                XMS(loc, 2) = MS.Data(:, 2);
+                try
+                    XMS(loc, 2) = MS.Data(:, 2);
+                catch
+                    % warning('wtf L152')
+                    vq = interp1(MS.Data(:, 1), MS.Data(:, 2), XMS(:,1), 'nearest');
+                    vq(isnan(vq)) = 0;
+                    XMS(:,2) = vq;
+                end
+                
             end
             
             infoMS.Title = ['XMS- ', infoMS.Title];

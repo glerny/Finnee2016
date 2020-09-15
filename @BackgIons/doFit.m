@@ -21,8 +21,14 @@ for ii =1:length(AxisX)
     
     Dt4c(Dt4c(:,2) == 0, :) = [];
     Dt4c(:, 3) = (Dt4c(:,2)-Dt4c(:,1))./Dt4c(:,2);
-    [p, ~] = polyfitweighted(Dt4c(:,2),Dt4c(:,3), obj.n);
-    P(ii,:) = p;
+    if size (Dt4c, 1) >= 2*obj.n+1
+        [p, ~] = polyfitweighted(Dt4c(:,2),Dt4c(:,3), obj.n);
+        P(ii,:) = p;
+    else
+        fprintf('\pscan %i not corrected', ii)
+        P(ii,:) = [0 , 0];
+    end
+    
 end
 try close(h); catch, end %#ok<CTCH>
 

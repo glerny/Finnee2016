@@ -106,7 +106,7 @@ switch MtU{1}
             
             
             s = dir(infoDts.Path2Dat{fln});
-            if s.bytes > obj.Options.MaxFileSize;
+            if s.bytes > obj.Options.MaxFileSize
                 [~, rndStr]           = fileparts(tempname);
                 fln                   = fln + 1;
                 infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
@@ -120,48 +120,21 @@ switch MtU{1}
         infoDts.Log   = ['PRF=', num2str(m), ' THR =', options.method,...
             '|', infoDts.Log];
         
-        S2NMat  = zeros(size(AxisMZ, 1), 2*MtU{2}+1);
-        for ii  = 1:MtU{2}+1
-            Scanii  = dtsIn.ListOfScans{ii};
-            if ~isempty(Scanii.Data)
-                nnMS = Scanii.Data(:,2);
-                [~, loc] = ismember(Scanii.Data(:,1), AxisMZ(:,1));
-                IZ = loc~= 0;
-                S2NMat(loc(IZ), MtU{2}+ii)  =  nnMS(IZ);
-            else
-                S2NMat(:, MtU{2}+ii)  = 0;
-            end
-        end
-        ZB      = zeros(MtU{3}, 2*MtU{2}+1);
-        S2NMat  = [ZB; S2NMat; ZB];
-        
         h = waitbar(0,'processing scans');
         for ii = 1:length(dtsIn.ListOfScans)
             waitbar(ii/length(dtsIn.ListOfScans))
             
-            TM = [];
-            for jj = -MtU{3}:1:MtU{3}
-                TM = [TM, circshift(S2NMat(:, MtU{2}+1), [jj, 0])]; %#ok<*AGROW>
-            end
-            ind2null = max(TM, [], 2) < MtU{4} & max(S2NMat, [], 2) < MtU{4};
+            Scanii  = dtsIn.ListOfScans{ii};
             infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
-            MS2Cor    = AxisMZ(:,1);
-            Scanii = dtsIn.ListOfScans{ii};
-            
-            if ~isempty(Scanii.Data)
-                [~, loc] = ismember(Scanii.Data(:,1), MS2Cor(:,1));
-                IZ = loc~= 0;
-                MS2Cor(loc(IZ), 2) = Scanii.Data(IZ,2);
-                MS2Cor(ind2null(MtU{3}+1:end-MtU{3}), 2) = 0;
-            else
-                MS2Cor(:,2) = 0;
-            end
+            XMS  = dtsIn.ListOfScans{ii}.Data;
+            XMS( XMS(:,2) < MtU{2}, 2) = 0;
             
             % find and remove spikes
             if options.RemSpks
                 spkSz  = options.SpkSz;
-                MS2Cor = spikesRemoval(MS2Cor, spkSz );
+                XMS = spikesRemoval(XMS, spkSz );
             end
+            
             
             infoScn           = Scanii.InfoTrc;
             [~, partial]      = decipherLog(infoDts.Log);
@@ -169,45 +142,32 @@ switch MtU{1}
             infoScn.FT        = partial{1};
             infoScn.Path2Dat  = infoDts.Path2Dat{fln};
             infoScn.Loc       = 'inFile';
-            infoScn.Precision = 'single';
-            AxisMZ(:,2)       = AxisMZ(:,2) + MS2Cor(:,2);
-            iNZ = MS2Cor(:,2) > 0;
-            AxisMZ(iNZ, 3)    = AxisMZ(iNZ, 3) + 1;
-            AxisMZ(:,4)       = max([AxisMZ(:,4), MS2Cor(:,2)], [], 2);
-            allProfiles(ii,2) = sum(MS2Cor(:,2));
-            allProfiles(ii,3) = max(MS2Cor(:,2));
+            infoScn.Precision = 'double';
+            
+            if size(AxisMZ, 1) > 1
+                AxisMZ(:,2)       = AxisMZ(:,2) + XMS(:,2);
+                iNZ = MS2Cor(:,2) > 0;
+                AxisMZ(iNZ, 3)    = AxisMZ(iNZ, 3) + 1;
+                AxisMZ(:,4)       = max([AxisMZ(:,4), MS2Cor(:,2)], [], 2);
+            end
+            allProfiles(ii,2) = sum(XMS(:,2));
+            allProfiles(ii,3) = max(XMS(:,2));
             
             % reduced trailing zero in excess
-            MS2Cor = trailRem(MS2Cor, 2);
+            provMat      = [XMS(2:end, 2); 0];
+            provMat(:,2) = XMS(:, 2);
+            provMat(:,3) = [0; XMS(1:end-1, 2)];
+            MS           = XMS(sum(provMat, 2) > 0, :);
             
             % recorded each scans
-            if isempty(MS2Cor)
+            if isempty(MS)
                 infoDts.ListOfScans{ii} = Trace(infoScn);
             else
-                infoDts.ListOfScans{ii} = Trace(infoScn, MS2Cor);
+                infoDts.ListOfScans{ii} = Trace(infoScn, MS);
             end
-            
-            % Load the  next scan
-            if ii+MtU{2}+1 > length(dtsIn.ListOfScans)
-                S2A  = AxisMZ(:,1);
-                S2A(:, 2) = 0;
-            else
-                scan2add = dtsIn.ListOfScans{ii+MtU{2}+1};
-                S2A  = AxisMZ(:,1);
-                S2A(:, 2) = 0;
-                if ~isempty(scan2add.Data)
-                    nnMS = scan2add.Data(:,2);
-                    [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
-                    IZ = loc~= 0;
-                    S2A(loc(IZ), 2) = nnMS(IZ);
-                end
-            end
-            scan2add = [ZB(:,1); S2A(:,2); ZB(:,1)];
-            S2NMat   = [S2NMat(:, 2:end), scan2add];
             
             
             s = dir(infoDts.Path2Dat{fln});
-            if isempty(s), continue, end
             if s.bytes > obj.Options.MaxFileSize
                 [~, rndStr]           = fileparts(tempname);
                 fln                   = fln + 1;
@@ -237,51 +197,26 @@ switch MtU{1}
         
         S2NMat  = zeros(size(AxisMZ, 1), 2*MtU{2}+1);
         for ii  = 1:MtU{2}+1
-            Scanii  = dtsIn.ListOfScans{ii};
-            if ~isempty(Scanii.Data)
-                [~, loc] = ismember(Scanii.Data(:,1), nd(:,1));
-                nnMS = Scanii.Data(:,2)./nd(loc,2);
-                [~, loc] = ismember(Scanii.Data(:,1), AxisMZ(:,1));
-                IZ = loc~= 0;
-                S2NMat(loc(IZ), MtU{2}+ii)  =  nnMS(IZ);
-            else
-                S2NMat(:, MtU{2}+ii)  = 0;
-            end
+            Scanii  = dtsIn.xpend(dtsIn.ListOfScans{ii});
+            S2NMat(:, MtU{2}+ii)  = Scanii.Data(:,2)./nd(:,2);
         end
+        vector = any(S2NMat > MtU{4}, 2);
+        infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
         
         h = waitbar(0,'processing scans');
+        
         for ii = 1:length(dtsIn.ListOfScans)
             waitbar(ii/length(dtsIn.ListOfScans))
             
-            % 1. Check in line
-            ind2null = max(S2NMat, [], 2) < MtU{4};
-            
             % 2. Check in line and column
-            S2NMat2 = S2NMat(:, MtU{2}+1);
-            for jj = 1:MtU{3}
-                S2NMat2 = [[0; S2NMat2(1:end-1, 1)], S2NMat2];
+            S2NMat2 = zeros(size(AxisMZ, 1), 2*MtU{3}+1);
+            for jj = -MtU{3}:1:MtU{3}
+                S2NMat2(:, MtU{3}+jj+1) = circshift(vector, jj);
             end
-            
-            for jj = 1:MtU{3}
-                S2NMat2 = [S2NMat2, [S2NMat2(2:end, end); 0]];
-            end
-            
-             % 1. Check in line
-            ind2null = max(S2NMat, [], 2) < MtU{4} & max(S2NMat2, [], 2) < MtU{4};
-            S2NMat(ind2null, MtU{2}+1) = 0;
-                
-            infoDts.Path2Dat{fln} = fullfile(obj.Path2Fin, rndStr);
-            MS2Cor    = AxisMZ(:,1);
-            Scanii = dtsIn.ListOfScans{ii};
-            
-            if ~isempty(Scanii.Data)
-                [~, loc] = ismember(Scanii.Data(:,1), MS2Cor(:,1));
-                IZ = loc~= 0;
-                MS2Cor(loc(IZ), 2) = Scanii.Data(IZ,2);
-                MS2Cor(ind2null, 2) = 0;
-            else
-                MS2Cor(:,2) = 0;
-            end
+            vector = any(S2NMat2, 2);
+           
+            MS2Cor  = dtsIn.xpend(dtsIn.ListOfScans{ii}).Data;
+            MS2Cor(~vector, 2) = 0;
             
             
             % find and remove spikes
@@ -319,20 +254,10 @@ switch MtU{1}
                 S2A  = AxisMZ(:,1);
                 S2A(:, 2) = 0;
             else
-                scan2add = dtsIn.ListOfScans{ii+MtU{2}+1};
-                S2A  = AxisMZ(:,1);
-                S2A(:, 2) = 0;
-                if ~isempty(scan2add.Data)
-                    [~, loc] = ismember(scan2add.Data(:,1), nd(:,1));
-                    nnMS = scan2add.Data(:,2)./nd(loc,2);
-                    [~, loc] = ismember(scan2add.Data(:,1), AxisMZ(:,1));
-                    IZ = loc~= 0;
-                    S2A(loc(IZ), 2) = nnMS(IZ);
-                end
+                S2A = dtsIn.xpend(dtsIn.ListOfScans{ii+MtU{2}+1}).Data;
             end
-            
-            S2NMat   = [S2NMat(:, 2:end), S2A(:, 2)];
-            
+            S2NMat = [S2NMat(:, 2:end), S2A(:, 2)./nd(:,2)];
+            vector = any(S2NMat > MtU{4}, 2);
             
             s = dir(infoDts.Path2Dat{fln});
             if isempty(s), continue, end
@@ -839,21 +764,7 @@ obj.save;
                     MtU{2} = str2double(MtU{2});
                 end
                 
-                if length(MtU) < 3
-                    MtU{3} = 3;
-                else
-                    MtU{3} = str2double(MtU{3});
-                end
-                
-                if length(MtU) < 4
-                    MtU{4} = 1000;
-                else
-                    MtU{4} = str2double(MtU{4});
-                end
-                
-                
-                options.method = ['thresholding:', num2str(MtU{2}),':',...
-                    num2str(MtU{3}),':', num2str(MtU{4})];
+                options.method = ['thresholding:', num2str(MtU{2})];
                 
             case 'remnoise'
                 % Check Dataset format
