@@ -37,7 +37,7 @@ classdef Axis
     
     properties (Dependent)
         Data         % The data  
-        InfoAxis      % Get back the data of the axis
+        InfoAxis     % Get back the data of the axis
     end
     
     properties (Dependent, Hidden)
@@ -148,7 +148,9 @@ classdef Axis
                     else
                         n    = obj.bz;
                         prcs = obj.Precision;
-                        fidReadDat = fopen(obj.Path2Dat, 'rb');
+                        %TOCHECK: stringrep
+                        fidReadDat = fopen(strrep(obj.Path2Dat, 'D:\', 'I:\'), 'rb');
+                        %fidReadDat = fopen(strrep(obj.Path2Dat, 'F:\Discos partilhados\', 'G:\Shared drives\'), 'rb');
                         fseek(fidReadDat,  obj.Index(1), 'bof');
                         data = fread(fidReadDat, ...
                             [( obj.Index(2)- obj.Index(1))/n 1], prcs);

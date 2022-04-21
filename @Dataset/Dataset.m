@@ -150,9 +150,14 @@ classdef Dataset
                     XMS(loc, 2) = MS.Data(:, 2);
                 catch
                     % warning('wtf L152')
-                    vq = interp1(MS.Data(:, 1), MS.Data(:, 2), XMS(:,1), 'nearest');
-                    vq(isnan(vq)) = 0;
-                    XMS(:,2) = vq;
+                    try
+                        vq = interp1(MS.Data(:, 1), MS.Data(:, 2), XMS(:,1), 'nearest');
+                        vq(isnan(vq)) = 0;
+                        XMS(:,2) = vq;
+                    catch
+                        XMS(:,2) = 0;
+                        disp('! Error with spectra, spectra removed')
+                    end
                 end
                 
             end

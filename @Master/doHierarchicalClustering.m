@@ -2,7 +2,7 @@ function obj = doHierarchicalClustering(obj, QCAnalysis, Filter, varargin)
 
 %% 1- INITIALISATION AND OPTIONS;
 ThrDifTime = 2;
-MaxProf    = 1000;
+MaxProf    = 2000;
 
 
 switch QCAnalysis
@@ -38,6 +38,7 @@ Partitions = ones(size(FOM.IDFeature));
 
 if size(Partitions, 1) <= MaxProf
     Cont = false;
+    LstPart = 1;
 else
     Cont = true;
 end
@@ -99,7 +100,6 @@ for ii = 1:length(LstPart)
         R    = corrcoef(cProf);
         R(isnan(R)) = 0;
         max_CC = max(max(triu(R,1)));
-        pause(0.2)
         
         if max_CC == 0
             break

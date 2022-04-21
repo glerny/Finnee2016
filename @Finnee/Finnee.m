@@ -345,9 +345,6 @@ classdef Finnee
                                 case 'MS:1000574'
                                     compression = field{1};
                                     
-                                case 'MS:1000576'
-                                    compression = field{1};
-                                    
                                 case 'MS:1000514'
                                     [~, ~, provField] = fieldfind( LDR.attributes, 'unitName');
                                     infoY.Label       = 'Mass';
@@ -359,9 +356,6 @@ classdef Finnee
                                     infoScn.AxisX     = AxisY;
                                     
                                 case 'MS:1000523'
-                                    dataFormat = field{1};
-                                    
-                                case 'MS:1000521'
                                     dataFormat = field{1};
                                     
                                 case 'MS:1000515'
@@ -453,20 +447,12 @@ classdef Finnee
                             switch dataFormat
                                 case 'MS:1000523'
                                     output = base64decode(input);
-                                    
-                                case 'MS:1000521'
-                                    error('32 bits not recognised, please use 64 bits')
-                                    
                                 otherwise
                                     error('precision not recognized')
                             end
                             switch compression
                                 case 'MS:1000574'
                                     output = zlibdecode(output);
-                                    
-                                case 'MS:1000576'
-                                    % No comprssion
-                                    
                                 otherwise
                                     error('compression not recognized')
                             end
@@ -581,7 +567,7 @@ classdef Finnee
                                             disp('wtf')
                                         end 
                                         MZlim(1) = min(MZlim(1), min(MS(:,1)));
-                                        MZlim(2) = max(MZlim(2), max(MS(:,1)));
+                                        MZlim(2) = maz(MZlim(2), max(MS(:,1)));
                                         
                                     end
                                     

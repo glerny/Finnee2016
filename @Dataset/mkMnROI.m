@@ -8,6 +8,12 @@
 
 function tgtROIs = mkMnROI(obj, mzList, mzWdw, tmList, tmWdW, name, varList)
 
+if isfile(fullfile(obj.Path2Fin, [name, '.mat']))
+    tgtROIs = load(fullfile(obj.Path2Fin, name), 'tgtROIs');
+    tgtROIs = tgtROIs.tgtROIs;
+    return
+end
+
 AxisX     = obj.AxisX.Data;
 AxisY     = obj.AxisY.Data;
 
@@ -19,6 +25,7 @@ if size(tmWdW, 1) == 1
     tmWdW = ones(size(mzList))*tmWdW;
 end
 
+varList = ones(size(mzList));
 
 for ii = 1:length(mzList)
     ix = findCloser(mzList(ii), AxisY);

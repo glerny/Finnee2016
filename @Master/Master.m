@@ -20,9 +20,10 @@ classdef Master
     properties
         Path
         Name
-        QC      = {};
-        Samples = {};
-        NPL     = 'myPeakList.mat'
+        QC        = {};
+        Samples   = {};
+        NPL       = 'myPeakList.mat'
+        HyperROIs = {};
     end
     
     methods
@@ -33,7 +34,8 @@ classdef Master
             [obj.Name, obj.Path] = uiputfile('*.mat','Location of master file');
             cArea   = 2;
             thrSN   = 10;
-            thrCC   = 0.7;
+            thrCC   = 0;
+            %TODO: Leabe thrCC to zero. should only be used with alignment.
             TLim    = [0 inf];
             Mw      = 50000;
             
@@ -74,6 +76,12 @@ classdef Master
             ii     = 1;
             Mcc    = [];
             allPrf = {};
+            allLim.Feature_ID = [];
+            allLim.Feature_Start = [];
+            allLim.Feature_End = [];
+            allLim.Feature_TimeAtFMax = [];
+            allLim.Feature_WidthAtBase = [];
+            allLim.Feature_StdDevTime = [];
             id2del =  size(Cluster);
             
             while 1
@@ -82,11 +90,12 @@ classdef Master
                 end
                 
                 Profiles = AxisTm';
+                Limits   = [];
                 % 3.1 DO test
                 cData = Cluster{ii};
                 if size(cData, 1) > 1
                     for jj = 1:size(cData, 1)
-                        I2PeL = cData(jj, 9);
+                        I2PeL = cData(jj, 11);
                         I2PIP = cData(jj, 1);
                         cPIP = PL{I2PeL}.myPeakList.LstPIP{1}{I2PIP};
                         
@@ -94,7 +103,12 @@ classdef Master
                         vq = interp1(x, cPIP.y, Profiles(:,1));
                         vq(isnan(vq)) = 0;
                         Profiles(:, end+1) = vq;
+                        Limits(jj, 1) = cPIP.x(1);
+                        Limits(jj, 2) = cPIP.x(end);
+                        [~, IdMax] = max(cPIP.y);
+                        Limits(jj, 3) = cPIP.x(IdMax);
                     end
+                    
                     PrfMinus = circshift(Profiles(:, 2:end), -1);
                     PrfPlus  = circshift(Profiles(:, 2:end), 1);
                     Profiles(sum([PrfMinus, Profiles(:, 2:end), PrfPlus] == 0, 2) == 3*jj, :) = [];
@@ -108,7 +122,7 @@ classdef Master
                         do('wtfh')
                     end
                     
-                    if length(unique(cData(:,9))) ~= length(cData(:,9)) || min(CC(2:end, 1)) < thrCC
+                    if length(unique(cData(:,11))) ~= length(cData(:,11)) || min(CC(2:end, 1)) < thrCC
                         CC(:,1) = []; CC(1, :) = [];
                         [I1, I2] = find(CC == min(min(CC)));
                         CC1 = corrcoef([Profiles(:, I1(1)+1), Profiles(:, 2:end)]);
@@ -116,37 +130,63 @@ classdef Master
                         [~, iz] = max([CC1(2:end, 1), CC2(2:end, 1)], [], 2);
                         Cluster{ii} = cData(iz == 1, :);
                         Cluster{end+1} = cData(iz == 2, :);
+                        
                     else
                         ii = ii +1;
                         Mcc(end+1, 1) = mean(CC(2:end, 1));
                         Mcc(end  , 2) = min(CC(2:end, 1));
                         allPrf{end+1} = [Profiles(:,1), mean(Profiles(:, 2:end), 2)];
+                        allLim.Feature_ID(end+1, 1) = size(allLim.Feature_ID, 1) + 1;
+                        allLim.Feature_Start(end+1, 1) = mean(Limits(:,1), 'omitnan');
+                        allLim.Feature_End(end+1, 1) = mean(Limits(:,2), 'omitnan');
+                        allLim.Feature_TimeAtFMax(end+1, 1) = mean(Limits(:,3), 'omitnan');
+                        allLim.Feature_WidthAtBase(end+1, 1) = ...
+                            mean(Limits(:,2), 'omitnan') - mean(Limits(:,1), 'omitnan');
+                        VctVar = [Limits(:,1) -  mean(Limits(:,1), 'omitnan')...
+                            ; Limits(:,2) -  mean(Limits(:,2), 'omitnan')...
+                            ; Limits(:,3) -  mean(Limits(:,3), 'omitnan')];
+                        allLim.Feature_StdDevTime(end+1, 1) = std(VctVar, [], 'omitnan');
+                        
                     end
                 else
                     ii = ii +1;
                     Mcc(end+1, 1) = NaN;
                     Mcc(end  , 2) = NaN;
                     allPrf{end+1} = [];
+                    allLim.Feature_ID(end+1, 1) = size(allLim.Feature_ID, 1)+ 1;
+                    allLim.Feature_Start(end+1, 1) = NaN;
+                    allLim.Feature_End(end+1, 1) = NaN;
+                    allLim.Feature_TimeAtFMax(end+1, 1) = NaN;
+                    allLim.Feature_WidthAtBase(end+1, 1) = NaN;
+                    allLim.Feature_StdDevTime(end+1, 1) = NaN;
+                    
                 end
             end
             
             % 3.2. Calculate FOM
-            FOM = zeros(length(Cluster), 11);
+            FOM = zeros(length(Cluster), 15);
             for ii = 1:length(Cluster)
                 vect = zeros(1, repli - QCnbr);
                 cData = Cluster{ii};
                 FOM(ii, 1) = ii;
-                FOM(ii, 2) = sum(cData(:,9) <= QCnbr);
+                FOM(ii, 2) = sum(cData(:,11) <= QCnbr);
                 FOM(ii, 3) = mean(cData(:,3));
                 FOM(ii, 4) = std(cData(:,3));
-                FOM(ii, 5) = mean(cData(:,6));
-                FOM(ii, 6) = std(cData(:,6));
-                idc = cData(:,9) <= QCnbr;
-                FOM(ii, 7) = mean(cData(idc,2));
-                FOM(ii, 8) = std(cData(idc,2));
-                FOM(ii, 9) = FOM(ii, 8)/FOM(ii, 7)*100;
-                FOM(ii, 10) = Mcc(ii,1);
-                FOM(ii, 11) = Mcc(ii,2);
+                if ~isempty(allPrf{ii})
+                    %%% HERE TO CORRECT TO FIND THE 95% CI.
+                    FOM(ii, 5) = allLim.Feature_Start(ii);
+                    FOM(ii, 6) = allLim.Feature_End(ii);
+                end
+                FOM(ii, 7) = mean(cData(:,6));
+                FOM(ii, 8) = std(cData(:,6));
+                FOM(ii, 9) = mean(cData(:,9));
+                FOM(ii, 10) = mean(cData(:,10));
+                idc = cData(:,11) <= QCnbr;
+                FOM(ii, 11) = mean(cData(idc,2));
+                FOM(ii, 12) = std(cData(idc,2));
+                FOM(ii, 13) = FOM(ii, 12)/FOM(ii, 11)*100;
+                FOM(ii, 14) = Mcc(ii,1);
+                FOM(ii, 15) = Mcc(ii,2);
             end
             
             % 3.3. Filter bad clusters
@@ -155,6 +195,8 @@ classdef Master
             FOM(Ix, :) = [];
             Cluster(Ix) = [];
             allPrf(Ix)  = [];
+            allLim = struct2table(allLim);
+            allLim(Ix, :) = [];
             FOM(:,1) = 1:length(Cluster);
             
             %% 4- Save and quit
@@ -171,10 +213,11 @@ classdef Master
             
             
             obj.QC.Method1.Cluster = Cluster;
+            obj.QC.Method1.Limits = allLim;
             obj.QC.Method1.FOM    = array2table(FOM,...
                 'VariableNames',{'ID', 'Replicates', ...
-                'CtrTime', 'std_CtrTime', ...
-                'AccurateMass', 'std_AccurateMass', ...
+                'CtrTime', 'std_CtrTime','Time_Start', 'Time_End', ...
+                'AccurateMass', 'std_AccurateMass', 'MeanMZ', 'std_MeanMZ', ...
                 'Area', 'std_ARea', 'RSD'...
                 'Mean_PearsonCoef', 'Min_PearsonCoef'});
             obj.QC.Method1.Profiles   = allPrf;
@@ -198,7 +241,7 @@ classdef Master
                 %2. All features in the first datasets start a cluster
                 
                 data = PLs{IX(1)}...
-                    (PLs{IX(1)}(:, 12) >= thrSN, [1, 4:7, 10, 12, 11]);
+                    (PLs{IX(1)}(:, 12) >= thrSN, [1, 4:7, 10, 12, 11, 8:9]);
                 data(:, end+1) = IX(1);
                 for ccii = 1:size(data, 1)
                     cluster{ccii} = data(ccii, :);
@@ -208,7 +251,7 @@ classdef Master
                 %3. Then do the remaining datasets
                 for ccii = 2:length(IX)
                     data =  PLs{IX(ccii)}...
-                        (PLs{IX(ccii)}(:, 12) >= thrSN, [1, 4:7, 10, 12, 11]);
+                        (PLs{IX(ccii)}(:, 12) >= thrSN, [1, 4:7, 10, 12, 11, 8:9]);
                     data(:, end+1) = IX(ccii);
                     
                     target = zeros(size(cluster));
@@ -250,7 +293,8 @@ classdef Master
                     FOM(ccii, 6) = std(ccData(:,6));
                     FOM(ccii, 7) = mean(ccData(:,2));
                     FOM(ccii, 8) = std(ccData(:,2));
-                    
+                    FOM(ccii, 9) = mean(ccData(:,9));
+                    FOM(ccii, 10) = max(ccData(:,10));
                 end
                 
                 [FOM, cluster] = Concatenate(FOM, cluster);

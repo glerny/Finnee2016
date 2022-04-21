@@ -17,6 +17,7 @@ FOM.Lm2 = [];
 FOM.mean_mz = [];
 FOM.std_mz = [];
 FOM.accuMass = [];
+
 if isempty(obj.StoredData), FOM = struct2table(FOM); return; end
 
 %% 2. Getting trace and filtering

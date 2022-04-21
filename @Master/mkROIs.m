@@ -47,7 +47,7 @@ for ii = 1:length(obj.QC.Files)
            tgtROIs.tmList = [tgtROIs.tmList; cRoi.tmList];
            tgtROIs.ROI    = [tgtROIs.ROI, cRoi.ROI];
         end
-    save(fullfile(myFinnee.Path2Fin, name), 'tgtROIs')
+    save(fullfile(myFinnee.Path2Fin, name), 'tgtROIs', '-v7.3')
     end
     
 end
