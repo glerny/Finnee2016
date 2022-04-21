@@ -25,7 +25,6 @@ function [redMS, I4LM] = LocalMaxima(XY, wdz, thrI)
 %% CORE OF THE FUNCTION
 % Finding non nul local maxima
 yy = XY(:,2);
-yy(yy <= thrI) = 0;
 A = zeros(length(yy), 2*wdz + 1);
 for ii = 1:2*wdz+1
     ind1 = max(1, wdz+2-ii);
@@ -33,7 +32,7 @@ for ii = 1:2*wdz+1
     A(length(yy)-ind2+1:length(yy)-ind1+1,ii) = yy(ind1:ind2);
 end
 
-lmax = yy >= max(A, [], 2) & yy >= thrI;
+lmax = yy <= min(A, [], 2) & yy <= thrI;
 % calculate accurate masses with the three most intense
 % points
 jj   = 1;

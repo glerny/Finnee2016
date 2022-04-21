@@ -1,11 +1,11 @@
 function M = ChrMoment3D(X, Y, XY)
 
+Y2X = (trapz(X, XY'))';
+X2Y = (trapz(Y, XY))';
 
-for ii = 1:length(X)
-    M0(ii) = trapz(Y, XY(:, ii));
-    M1(ii) = trapz(Y, Y.* XY(:, ii))/M0(ii);
-    M2(ii) = trapz(Y, (Y - M1(ii)).^2.* XY(:, ii))/M0(ii);
-end
+M2X = ChrMoment([X, X2Y]);
+M2Y = ChrMoment([Y, Y2X]);
 
-M = ChrMoment([X, M0']);
-M(5) = sum(M0.*M1, 'omitnan')/sum(M0, 'omitnan');
+M = array2table([M2X(1:4), M2Y(1:4)]);
+M.Properties.VariableNames = {'M0_X', 'M1_X', 'M2_X', 'M3_X', ...
+    'M0_Y', 'M1_Y', 'M2_Y', 'M3_Y'};

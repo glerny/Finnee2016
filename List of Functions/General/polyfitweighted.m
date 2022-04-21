@@ -1,4 +1,4 @@
-function [p, w] = polyfitweighted(x,y,n) %,w)
+function p = polyfitweighted(x,y,n,w)
 % polyfitweighted.m 
 % -----------------
 %
@@ -22,7 +22,6 @@ function [p, w] = polyfitweighted(x,y,n) %,w)
 % Class support for inputs X,Y,W:
 %    float: double, single
 %
-
 % The regression problem is formulated in matrix format as:
 %
 %    yw = V*p    or
@@ -37,58 +36,34 @@ function [p, w] = polyfitweighted(x,y,n) %,w)
 % 7th order polynomial, matrix V would be:
 %
 % V = [w.*x.^7 w.*x.^6 w.*x.^5 w.*x.^4 w.*x.^3 w.*x.^2 w.*x w];
-
-%%%%% MODIFICATION 14/06/2017.
-%%%%% MODIFICATION BY G. Erny
-%%%%% 
- % start with weight of 1;
- w = ones(size(x));
- 
 if ~isequal(size(x),size(y),size(w))
     error('X and Y vectors must be the same size.')
 end
-
 x = x(:);
 y = y(:);
 w = w(:);
-
-for ii =1:3
-    % Construct weighted Vandermonde matrix.
-    %V(:,n+1) = ones(length(x),1,class(x));
-    V(:,n+1) = w; %#ok<AGROW>
-    for j = n:-1:1
-        V(:,j) = x.*V(:,j+1);
+% Construct weighted Vandermonde matrix.
+%V(:,n+1) = ones(length(x),1,class(x));
+V(:,n+1) = w;
+for j = n:-1:1
+   V(:,j) = x.*V(:,j+1);
+end
+% Solve least squares problem.
+[Q,R] = qr(V,0);
+ws = warning('off','all'); 
+p = R\(Q'*(w.*y));    % Same as p = V\(w.*y);
+warning(ws);
+if size(R,2) > size(R,1)
+   warning('polyfitweighted:PolyNotUnique', ...
+       'Polynomial is not unique; degree >= number of data points.')
+elseif condest(R) > 1.0e10
+    if nargout > 2
+        warning('polyfitweighted:RepeatedPoints', ...
+            'Polynomial is badly conditioned. Remove repeated data points.')
+    else
+        warning('polyfitweighted:RepeatedPointsOrRescale', ...
+            ['Polynomial is badly conditioned. Remove repeated data points\n' ...
+            '         or try centering and scaling as described in HELP POLYFIT.'])
     end
-    
-    % Solve least squares problem.
-    [Q,R] = qr(V,0);
-    ws = warning('off','all');
-    p = R\(Q'*(w.*y));    % Same as p = V\(w.*y);
-    warning(ws);
-    if size(R,2) > size(R,1)
-        warning('polyfitweighted:PolyNotUnique', ...
-            'Polynomial is not unique; degree >= number of data points.')
-    elseif condest(R) > 1.0e10
-        if nargout > 2
-            warning('polyfitweighted:RepeatedPoints', ...
-                'Polynomial is badly conditioned. Remove repeated data points.')
-        else
-            warning('polyfitweighted:RepeatedPointsOrRescale', ...
-                ['Polynomial is badly conditioned. Remove repeated data points\n' ...
-                '         or try centering and scaling as described in HELP POLYFIT.'])
-        end
-    end
-    
-    %%%% GE Find the weight 
-    
-    y_ = polyval(p, x);
-    d = y-y_;
-    
-    m = mean(d);
-    s = std(d);
-    w = 1./(1 + exp(2*(abs(d) - (2*s-m))/s));
-    
-    %%%%% GE and loop
-
 end
 p = p.';          % Polynomial coefficients are row vectors by convention.

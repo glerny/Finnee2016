@@ -21,7 +21,7 @@ if nargin == 2
     w = true(N, 1);
 end
 L = 0;
-iterMax = 20;
+iterMax = 10;
 
 for ii = 1:iterMax
     
@@ -38,6 +38,7 @@ for ii = 1:iterMax
     %%% ORIGINAL
     
     if sum(w) ==  L, break; end
+    if sum(w) <= 5, break; end
     if sum(w) <= 0.5*N, break; end
 
     

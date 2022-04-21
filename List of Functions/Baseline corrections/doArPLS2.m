@@ -16,7 +16,7 @@ w = ones(N,1);
 L = 0;
 iterMax = 20;
 
-for ii = 1:iterMax;
+for ii = 1:iterMax
     W = spdiags(w, 0, N, N);
     % Cholesky decomposition
     C = chol(W + H);
